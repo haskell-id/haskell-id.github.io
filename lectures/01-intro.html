@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: 01-intro</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../"><img src="../static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="../install.html">Instalasi</a>
+        <a href="../lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><!--
+{-# OPTIONS_GHC -Wall #-}
+-->
+<h1 id="dasar-haskell">Dasar Haskell</h1>
+<p>Bacaan tambahan:</p>
+<ul>
+<li><a href="http://learnyouahaskell.com/starting-out"><em>Learn You a Haskell for Great Good</em>, bab 2</a></li>
+<li><a href="http://book.realworldhaskell.org/"><em>Real World Haskell</em></a>, bab 1 dan 2</li>
+</ul>
+<h2 id="apa-itu-haskell">Apa itu Haskell?</h2>
+<p>Haskell adalah bahasa pemrograman yang <em>lazy</em> dan fungsional yang diciptakan pada akhir tahun 80-an oleh komite akademis. Pada saat itu, ada banyak bahasa pemrograman fungsional berseliweran dan setiap orang punya favoritnya sendiri-sendiri sehingga mempersulit pertukaran ide. Sekelompok orang akhirnya berkumpul bersama dan mendesain bahasa baru dengan mengambil beberapa ide terbaik dari bahasa yang sudah ada (dan menambah beberapa ide baru milik mereka sendiri). Lahirlah Haskell.</p>
+<p>Jadi, seperti apa Haskell? Haskell itu:</p>
+<p><strong>Fungsional</strong></p>
+<p>Tidak ada pengertian tepat dan baku untuk istilah “fungsional”. Tapi ketika kita mengatakan bahwa Haskell adalah bahasa pemrograman fungsional, kita biasanya mengingat dua hal ini:</p>
+<ul>
+<li><p>Fungsi-nya <em>first-class</em>, yakni fungsi adalah nilai yang bisa digunakan layaknya nilai-nilai yang lain.</p></li>
+<li><p>Program Haskell lebih bermakna <em>mengevaluasi ekspresi</em> ketimbang <em>mengeksekusi instruksi</em>.</p></li>
+</ul>
+<p>Perpaduan keduanya menghasilkan cara berpikir tentang pemrograman yang sepenuhnya berbeda. Kebanyakan waktu kita di semester ini akan dihabiskan mengeksplorasi cara berpikir ini.</p>
+<p><strong><em>Pure</em></strong></p>
+<p>Ekspresi di Haskell selalu <em>referentially transparent</em>, yakni:</p>
+<ul>
+<li><p>Tanpa mutasi! Semuanya (variable, struktur data…) immutable</p></li>
+<li><p>Ekspresi tidak memiliki “efek samping” (seperti memperbarui variabel global atau mencetak ke layar).</p></li>
+<li><p>Memanggil fungsi yang sama dengan argumen yang sama selalu menghasilkan output yang sama setiap waktu.</p></li>
+</ul>
+<p>Hal ini mungkin terdengar gila. Bagaimana mungkin bisa mengerjakan sesuatu tanpa mutasi dan efek samping? Tentunya ini memerlukan perubahan cara berpikir (jika kalian terbiasa dengan paradigma pemrograman berbasis objek). Tapi setelah kalian bisa berubah, akan ada beberapa keuntungan menakjubkan:</p>
+<ul>
+<li><p><em>Equational reasoning</em> dan <em>refactoring</em>. Di Haskell kita bisa “mengganti equals dengan equals”, seperti yang kita pelajari di aljabar.</p></li>
+<li><p><em>Parallelism</em>. Mengevaluasi ekspresi secara paralel amatlah mudah ketika mereka dijamin tidak mempengaruhi yang lain.</p></li>
+<li><p>Lebih sedikit sakit kepala. Sederhananya, “efek tanpa batas” dan “aksi di kejauhan” membuat program sulit di-debug, di-maintain, dan dianalisa.</p></li>
+</ul>
+<p><strong><em>Lazy</em></strong></p>
+<p>Di Haskell, ekspresi tidak akan dievaluasi sampai hasilnya benar-benar dibutuhkan. Hal ini adalah keputusan sederhana dengan konsekuensi yang merambat kemana-mana, yang akan kita eksplorasi sepanjang semester ini. Beberapa konsekuensinya antara lain:</p>
+<ul>
+<li><p>Mendefinisikan <em>control structure</em> baru lewat pendefinisian fungsi menjadi mudah.</p></li>
+<li><p>Memungkinkan definisi dan pengerjaan dengan struktur data tak hingga.</p></li>
+<li><p>Mengakibatkan model pemrograman yang lebih komposisional (lihat <em>wholemeal programming</em> di bawah).</p></li>
+<li><p>Salah satu akibat negatif utamanya adalah analisa terhadap penggunaan ruang dan waktu menjadi lebih rumit.</p></li>
+</ul>
+<p><strong><em>Statically typed</em></strong></p>
+<p>Setiap ekspresi di Haskell memiliki tipe, dan tipe-tipe tersebut semuanya diperiksa pada waktu kompilasi. Program dengan kesalahan tipe tidak akan dikompilasi, apalagi dijalankan.</p>
+<h2 id="tema">Tema</h2>
+<p>Selama kuliah ini, kita akan fokus pada tiga tema utama.</p>
+<p><strong>Tipe</strong></p>
+<p><em>Static type system</em> bisa terlihat mengganggu. Faktanya, di bahasa seperti C++ dan Java, mereka memang mengganggu. Tapi bukan <em>static type system</em>-nya yang mengganggu, melainkan <em>type system</em> di C++ dan Java yang kurang ekspresif! Semester ini kita akan melihat lebih dekat pada <em>type system</em> di Haskell yang:</p>
+<ul>
+<li><p><em>Membantu mengklarifikasi pemikiran dan ekspresi struktur program</em></p>
+<p>Langkah pertama dalam menulis program Haskell biasanya adalah dengan menulis semua tipenya. Karena <em>type system</em> Haskell sangat ekspresif, langkah desain non-trivial ini akan sangat membantu dalam mengklarifikasi pemikiran seseorang tentang programnya.</p></li>
+<li><p><em>Menjadi salah satu bentuk dokumentasi</em></p>
+<p>Dengan type system yang ekspresif, hanya dengan melihat tipe pada suatu fungsi mampu memberitahu kalian tentang apa yang mungkin dikerjakan fungsi tersebut dan bagaimana ia bisa digunakan, bahkan sebelum kalian membaca dokumentasinya satu kata pun.</p></li>
+<li><p>Mengubah <em>run-time errors</em> menjadi <em>compile-time errors</em></p>
+<p>Jauh lebih baik jika kita bisa memperbaiki kesalahan di depan daripada harus menguji sebanyak mungkin dan berharap yang terbaik. “Jika program ini berhasil di-compile, maka program tersebut pasti benar” sering dianggap candaan (karena masih mungkin untuk memiliki kesalahan di logika meskipun programnya <em>type-correct</em>), tetapi hal tersebut sering terjadi di Haskell ketimbang bahasa lain.</p></li>
+</ul>
+<p><strong>Abstraksi</strong></p>
+<p>“Don’t Repeat Yourself” adalah mantra yang sering didengar di dunia pemrograman. Juga dikenal sebagai “Prinsip Abstraksi”, idenya adalah tidak ada yang perlu diduplikasi: setiap ide, algoritma, dan potongan data harus muncul tepat satu kali di kode kalian. Mengambil potongan kode yang mirip dan memfaktorkan kesamaannya sering disebut sebagai proses abstraksi.</p>
+<p>Haskell sangatlah bagus dalam abstraksi: fitur seperti <em>parametric polymorphism</em>, fungsi <em>higher-order</em>, dan <em>type class</em> semuanya membantu melawan pengulangan yang tak perlu. Perjalanan kita dalam semester ini sebagian besar akan merupakan perjalanan dari yang spesifik menuju ke yang abstrak</p>
+<p><strong><em>Wholemeal programming</em></strong></p>
+<p>Satu lagi tema yang akan kita eksplorasi ialah <em>wholemeal programming</em>. Berikut adalah sebuah kuotasi dari Ralf Hinze:</p>
+<blockquote>
+<p>“Bahasa pemrograman fungsional unggul di <em>wholemeal programming</em>, istilah yang diciptakan oleh Geraint Jones. <em>Wholemeal programming</em> berarti berpikir besar dan menyeluruh. Bekerja dengan seluruh list secara utuh ketimbang barisan elemen-elemennya; mengembangkan ruang solusi ketimbang solusi individual; membayangkan sebuah <em>graph</em> ketimbang <em>path</em> tunggal. Pendekatan <em>wholemeal</em> seringkali menawarkan perspektif baru terhadap masalah yang diberikan. Hal ini juga dengan sempurna dilengkapi dengan ide dari pemrograman proyektif: pertama selesaikan masalah yang lebih umum, lalu ekstrak bagian dan potongan yang menarik dengan mentransformasikan masalah umum tadi ke yang masalah yang lebih spesifik.”</p>
+</blockquote>
+<p>Sebagai contoh, perhatikan <em>pseudocode</em> berikut ini di bahasa C/Java-ish:</p>
+<pre><code>int acc = 0;
+for ( int i = 0; i &lt; lst.length; i++ ) {
+  acc = acc + 3 * lst[i];
+}</code></pre>
+<p>Kode ini menderita apa yang dikatakan Richard Bird dengan istilah “indexities”, yakni kita harus khawatir terhadap detail <em>low-level</em> dari iterasi array dengan tetap mencatat indeks saat ini. Kode tersebut juga menggabungkan apa yang baiknya dipisahkan sebagai dua operasi berbeda: mengalikan setiap item dengan 3, dan menjumlahkan semua hasilnya.</p>
+<p>Di Haskell, kita cukup menuliskan</p>
+<pre><code>sum (map (3*) lst)</code></pre>
+<p>Semester ini kita akan mengeksplorasi pergeseran cara berpikir dengan cara pemrograman seperti ini, dan mememeriksa bagaimana dan mengapa Haskell membuatnya menjadi mungkin.</p>
+<h2 id="literate-haskell"><em>Literate Haskell</em></h2>
+<p>File ini adalah “dokumen <em>literate</em> Haskell”. Baris yang diawali dengan &gt; dan spasi (lihat dibawah) merupakan kode. Lainnya (seperti paragraf ini) adalah komentar. Tugas pemrograman kalian tidak harus berupa <em>literate</em> haskell, meskipun diperbolehkan jika kalian mau. Dokumen <em>literate</em> Haskell berekstensi .lhs, sedangkan kode sumber <em>non-literate</em> Haskell berekstensi .hs.</p>
+<h2 id="deklarasi-dan-variabel">Deklarasi dan variabel</h2>
+<p>Berikut ini adalah kode Haskell:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">x ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">x <span class="fu">=</span> <span class="dv">3</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="co">-- Perhatikan bahwa komentar (non-literate) normal diawali dengan dua tanda strip</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="co">{- atau diapit dalam pasangan</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="co">   kurung kurawal/strip. -}</span></a></code></pre></div>
+<p>Kode diatas mendeklarasikan variabel <code>x</code> dengan tipe <code>Int</code> (:: diucapkan “memiliki tipe”) dan mendeklarasikan nilai <code>x</code> menjadi <code>3</code>. Perhatikan bahwa nilai ini akan menjadi nilai <code>x</code> selamanya (paling tidak dalam program kita saja). Nilai dari <code>x</code> tidak akan bisa diganti kemudian.</p>
+<p>Coba <em>uncomment</em> baris dibawah ini; kalian akan mendapati kesalahan yang berbunyi <code>Multiple declarations of `x'</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- x = 4</span></a></code></pre></div>
+<p>Di Haskell, variabel bukanlah kotak mutable yang bisa diubah-ubah; mereka hanyalah nama untuk suatu nilai.</p>
+<p>Dengan kata lain, <code>=</code> tidak menyatakan “assignment” seperti di bahasa lain. Alih-alih, <code>=</code> menyatakan definisi seperti di matematika. <code>x = 4</code> tidak seharusnya dibaca “<code>x</code> memperoleh <code>4</code>” atau “<em>assign</em> <code>4</code> ke <code>x</code>”, tetapi harus dibaca “<code>x</code> <em>didefinisikan sebagai</em> <code>4</code>”.</p>
+<p>Menurut kalian apa arti dari kode berikut?</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">y ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">y <span class="fu">=</span> y <span class="fu">+</span> <span class="dv">1</span></a></code></pre></div>
+<h2 id="basic-types">Basic Types</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- Machine-sized integers</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">i ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">i <span class="fu">=</span> <span class="fu">-</span><span class="dv">78</span></a></code></pre></div>
+<p><code>Int</code> dijamin oleh standar bahasa Haskell untuk mengakomodasi nilai paling tidak sebesar \(\pm 2^{29}\), tapi ukuran pastinya bergantung pada arsitektur kalian. Sebagai contoh, di mesin 64-bit saya kisarannya sampai 2^63. Kalian bisa mencari tahu kisarannya dengan mengevaluasi kode dibawah ini:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">intTerbesar,<span class="ot"> intTerkecil ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">intTerbesar  <span class="fu">=</span> maxBound</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">intTerkecil <span class="fu">=</span> minBound</a></code></pre></div>
+<p>(Perhatikan bahwa Haskell idiomatik mengunakan camelCase untuk nama <em>identifier</em>. Jika kalian tidak menyukainya, terimalah saja.)</p>
+<p>Di sisi lain, tipe Integer hanya dibatasi oleh kapasitas memori di mesin kalian.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- Arbitrary-precision integers</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="ot">n ::</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">n <span class="fu">=</span> <span class="dv">1234567890987654321987340982334987349872349874534</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="ot">sangatBesar ::</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">sangatBesar <span class="fu">=</span> <span class="dv">2</span><span class="fu">^</span>(<span class="dv">2</span><span class="fu">^</span>(<span class="dv">2</span><span class="fu">^</span>(<span class="dv">2</span><span class="fu">^</span><span class="dv">2</span>)))</a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8"><span class="ot">banyaknyaDigit ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">banyaknyaDigit <span class="fu">=</span> length (show sangatBesar)</a></code></pre></div>
+<p>Untuk angka <em>floating-point</em>, ada <code>Double</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- Double-precision floating point</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">d1,<span class="ot"> d2 ::</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">d1 <span class="fu">=</span> <span class="fl">4.5387</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">d2 <span class="fu">=</span> <span class="fl">6.2831e-4</span></a></code></pre></div>
+<p>Ada juga tipe angka <em>single-precision floating point</em>, <code>Float</code>.</p>
+<p>Akhirnya, kita juga punya <em>boolean</em>, karakter, dan string:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- Booleans</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">b1,<span class="ot"> b2 ::</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">b1 <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">b2 <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6"><span class="co">-- Karakter unicode</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">c1, c2,<span class="ot"> c3 ::</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb10-8" data-line-number="8">c1 <span class="fu">=</span> <span class="ch">'x'</span></a>
+<a class="sourceLine" id="cb10-9" data-line-number="9">c2 <span class="fu">=</span> <span class="ch">'Ø'</span></a>
+<a class="sourceLine" id="cb10-10" data-line-number="10">c3 <span class="fu">=</span> <span class="ch">'ダ'</span></a>
+<a class="sourceLine" id="cb10-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb10-12" data-line-number="12"><span class="co">-- String adalah list dari karakter dengan sintaks khusus</span></a>
+<a class="sourceLine" id="cb10-13" data-line-number="13"><span class="ot">s ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb10-14" data-line-number="14">s <span class="fu">=</span> <span class="st">&quot;Hai, Haskell!&quot;</span></a></code></pre></div>
+<h2 id="ghci">GHCi</h2>
+<p>GHCi adalah sebuah REPL (<em>Read-Eval-Print-Loop</em>) Haskell interaktif yang satu paket dengan GHC. Di <em>prompt</em> GHCi, kalian bisa mengevaluasi ekspresi, memuat berkas Haskell dengan <code>:load</code> (<code>:l</code>) (dan memuat ulang mereka dengan <code>:reload</code> (<code>:r</code>)), menanyakan tipe dari suatu ekspresi dengan <code>:type</code> (<code>:t</code>), dan banyak hal lainnya (coba <code>:?</code> untuk melihat perintah-perintahnya).</p>
+<h2 id="aritmatika">Aritmatika</h2>
+<p>Coba evaluasi ekspresi-ekspresi ini di GHCi:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">ex01 <span class="fu">=</span> <span class="dv">3</span> <span class="fu">+</span> <span class="dv">2</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">ex02 <span class="fu">=</span> <span class="dv">19</span> <span class="fu">-</span> <span class="dv">27</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">ex03 <span class="fu">=</span> <span class="fl">2.35</span> <span class="fu">*</span> <span class="fl">8.6</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">ex04 <span class="fu">=</span> <span class="fl">8.7</span> <span class="fu">/</span> <span class="fl">3.1</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">ex05 <span class="fu">=</span> mod <span class="dv">19</span> <span class="dv">3</span></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">ex06 <span class="fu">=</span> <span class="dv">19</span> <span class="ot">`mod`</span> <span class="dv">3</span></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">ex07 <span class="fu">=</span> <span class="dv">7</span> <span class="fu">^</span> <span class="dv">222</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">ex08 <span class="fu">=</span> (<span class="fu">-</span><span class="dv">3</span>) <span class="fu">*</span> (<span class="fu">-</span><span class="dv">7</span>)</a></code></pre></div>
+<p>Perhatikan bagaimana `backticks` membuat fungsi menjadi operator <em>infix</em>. Perhatikan juga angka negatif seringkali harus diapit tanda kurung, untuk mencegah tanda negasi di-<em>parse</em> sebagai operasi pengurangan. (Ya, ini terlihat jelek. Mohon maaf.)</p>
+<p>Sedangkan berikut ini akan menghasilkan <em>error</em>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">-- badArith1 = i + n</span></a></code></pre></div>
+<p>Penjumlahan hanya berlaku untuk penjumlahan nilai bertipe numerik sama, dan Haskell tidak melakukan perubahan secara implisit. Kalian harus secara eksplisit mengubahnya dengan:</p>
+<ul>
+<li><p><code>fromIntegral</code>: mengubah dari tipe integral apapun (<code>Int</code> atau <code>Integer</code>) ke tipe numerik lainnya.</p></li>
+<li><p><code>round</code>, <code>floor</code>, <code>ceiling</code>: mengubah angka <em>floating-point</em> ke <code>Int</code> atau <code>Integer</code>.</p></li>
+</ul>
+<p>Sekarang coba ini:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- badArith2 = i / i</span></a></code></pre></div>
+<p>Ini juga menghasilkan <em>error</em> karena <code>/</code> melakukan pembagian hanya untuk angka <em>floating-point</em>. Untuk pembagian integer kita menggunakan <code>div</code>.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">ex09 <span class="fu">=</span> i <span class="ot">`div`</span> i</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">ex10 <span class="fu">=</span> <span class="dv">12</span> <span class="ot">`div`</span> <span class="dv">5</span></a></code></pre></div>
+<p>Jika kalian terbiasa dengan bahasa lain yang melakukan perubahan tipe numerik secara implisit, ini terkesan sangat mengganggu pada awalnya. Akan tetapi, saya jamin kalian akan terbiasa, dan bahkan pada akhirnya akan menghargainya. Perubahan numerik secara implisit membuat pemikiran kita tentang kode numerik menjadi tidak rapi.</p>
+<h2 id="logika-boolean">Logika <em>boolean</em></h2>
+<p>Seperti yang kalian duga, nilai <em>Boolean</em> bisa digabung satu sama lain dengan <code>(&amp;&amp;)</code> (<em>logical and</em>), <code>(||)</code> (<em>logical or</em>), dan <code>not</code>. Sebagai contoh,</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1">ex11 <span class="fu">=</span> <span class="dt">True</span> <span class="fu">&amp;&amp;</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">ex12 <span class="fu">=</span> not (<span class="dt">False</span> <span class="fu">||</span> <span class="dt">True</span>)</a></code></pre></div>
+<p>Nilai juga bisa dibandingkan kesamaannya satu sama lain dengan <code>(==)</code> dan <code>(/=)</code>, atau dibandingkan urutannya dengan menggunakan <code>(&lt;)</code>, <code>(&gt;)</code>, <code>(&lt;=)</code>, dan <code>(&gt;=)</code>.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1">ex13 <span class="fu">=</span> (<span class="ch">'a'</span> <span class="fu">==</span> <span class="ch">'a'</span>)</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">ex14 <span class="fu">=</span> (<span class="dv">16</span> <span class="fu">/=</span> <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">ex15 <span class="fu">=</span> (<span class="dv">5</span> <span class="fu">&gt;</span> <span class="dv">3</span>) <span class="fu">&amp;&amp;</span> (<span class="ch">'p'</span> <span class="fu">&lt;=</span> <span class="ch">'q'</span>)</a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">ex16 <span class="fu">=</span> <span class="st">&quot;Haskell&quot;</span> <span class="fu">&gt;</span> <span class="st">&quot;C++&quot;</span></a></code></pre></div>
+<p>Haskell juga memiliki ekspresi <code>if</code>: <code>if b then t else f</code> adalah sebuah ekspresi yang mengevaluasi <code>t</code> jika ekspresi <em>boolean</em> <code>b</code> bernilai <code>True</code>, dan <code>f</code> jika <code>b</code> bernilai <code>False</code>. Perhatikan bahwa ekspresi <code>if</code> berbeda dengan <em>statement</em> <code>if</code>. Di dalam <em>statement</em> <code>if</code> bagian <code>else</code> adalah opsional, jika tidak ada maka berarti “jika tes bernilai <code>False</code>, jangan lakukan apapun”. Sedangkan pada ekspresi <code>if</code>, bagian <code>else</code> wajib ada karena ekspresi <code>if</code> harus menghasilkan sebuah nilai.</p>
+<p>Haskell yang idiomatik tidak banyak menggunakan ekspresi <code>if</code>, kebanyakan menggunakan <em>pattern-matching</em> atau <em>guard</em> (lihat bagian berikut).</p>
+<h2 id="mendefinisikan-fungsi">Mendefinisikan fungsi</h2>
+<p>Kita bisa menulis fungsi untuk integer secara per kasus.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- Jumlahkan integer dari 1 sampai n.</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="ot">sumtorial ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">sumtorial <span class="dv">0</span> <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">sumtorial n <span class="fu">=</span> n <span class="fu">+</span> sumtorial (n<span class="fu">-</span><span class="dv">1</span>)</a></code></pre></div>
+<p>Perhatikan sintaks untuk tipe fungsi: <code>sumtorial :: Integer -&gt; Integer</code> yang berarti <code>sumtorial</code> adalah sebuah fungsi yang menerima sebuah <code>Integer</code> sebagai input dan menghasilkan <code>Integer</code> sebagai output.</p>
+<p>Tiap klausa dicek berurutan dari atas ke bawah dan yang pertama kali cocok akan digunakan. Sebagai contoh, evaluasi <code>sumtorial 0</code> akan menghasilkan <code>0</code>, karena cocok dengan klausa pertama. <code>sumtorial 3</code> tidak cocok dengan klausa pertama (<code>3</code> tidak sama dengan <code>0</code>) sehingga klausa kedua dicoba. Sebuah variabel seperti <code>n</code> cocok dengan apapun sehingga klausa kedua cocok dan <code>sumtorial 3</code> dievaluasi menjadi <code>3 + sumtorial (3 -1)</code> (yang juga bisa dievaluasi lebih lanjut).</p>
+<p>Pilihan juga bisa dibuat dengan ekspresi Boolean menggunakan <em>guards</em>. Contoh:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">hailstone ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">hailstone n</a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">  <span class="fu">|</span> n <span class="ot">`mod`</span> <span class="dv">2</span> <span class="fu">==</span> <span class="dv">0</span> <span class="fu">=</span> n <span class="ot">`div`</span> <span class="dv">2</span></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">  <span class="fu">|</span> otherwise      <span class="fu">=</span> <span class="dv">3</span><span class="fu">*</span>n <span class="fu">+</span> <span class="dv">1</span></a></code></pre></div>
+<p>Tiap <em>guard</em> yang berupa ekspresi Boolean bisa diasosiasikan dengan klausa di definisi fungsi. Jika pola klausa cocok, <em>guards</em> akan dievaluasi berurutan dari atas ke bawah dan yang pertama dievaluasi <code>True</code> akan dipilih. Jika tidak ada yang <code>True</code>, pencocokan akan dilanjutkan ke klausa berikutnya.</p>
+<p>Sebagai contoh, berikut adalah evaluasi <code>hailstone 3</code>. <code>3</code> dicocokkan dengan <code>n</code> dan cocok (karena variabel cocok dengan apapun). Lalu, <code>n `mod` 2</code> dievaluasi, hasilnya <code>False</code> karena <code>n = 3</code> tidak menghasilkan sisa <code>0</code> ketika dibagi <code>2</code>. <code>otherwise</code> hanyalah sinonim untuk <code>True</code>, sehingga <em>guard</em> kedua dipilih dan hasil dari <code>hailstone 3</code> ialah <code>3*3 + 1 = 10</code>.</p>
+<p>Contoh yang lebih rumit:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">foo ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb19-2" data-line-number="2">foo <span class="dv">0</span> <span class="fu">=</span> <span class="dv">16</span></a>
+<a class="sourceLine" id="cb19-3" data-line-number="3">foo <span class="dv">1</span> </a>
+<a class="sourceLine" id="cb19-4" data-line-number="4">  <span class="fu">|</span> <span class="st">&quot;Haskell&quot;</span> <span class="fu">&gt;</span> <span class="st">&quot;C++&quot;</span> <span class="fu">=</span> <span class="dv">3</span></a>
+<a class="sourceLine" id="cb19-5" data-line-number="5">  <span class="fu">|</span> otherwise         <span class="fu">=</span> <span class="dv">4</span></a>
+<a class="sourceLine" id="cb19-6" data-line-number="6">foo n</a>
+<a class="sourceLine" id="cb19-7" data-line-number="7">  <span class="fu">|</span> n <span class="fu">&lt;</span> <span class="dv">0</span>            <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb19-8" data-line-number="8">  <span class="fu">|</span> n <span class="ot">`mod`</span> <span class="dv">17</span> <span class="fu">==</span> <span class="dv">2</span>  <span class="fu">=</span> <span class="fu">-</span><span class="dv">43</span></a>
+<a class="sourceLine" id="cb19-9" data-line-number="9">  <span class="fu">|</span> otherwise        <span class="fu">=</span> n <span class="fu">+</span> <span class="dv">3</span></a></code></pre></div>
+<p>Apa hasil dari <code>foo (-3)</code>? <code>foo 0</code>? <code>foo 1</code>? <code>foo 36</code>? <code>foo 38</code>?</p>
+<p>Misalkan kita ingin membawa test genapnya bilangan keluar dari definisi <code>hailstone</code>, berikut adalah contohnya:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">isEven ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb20-2" data-line-number="2">isEven n </a>
+<a class="sourceLine" id="cb20-3" data-line-number="3">  <span class="fu">|</span> n <span class="ot">`mod`</span> <span class="dv">2</span> <span class="fu">==</span> <span class="dv">0</span> <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb20-4" data-line-number="4">  <span class="fu">|</span> otherwise      <span class="fu">=</span> <span class="dt">False</span></a></code></pre></div>
+<p>Seperti ini juga bisa, tapi lebih rumit. Terlihat jelas kan?</p>
+<h2 id="pairs"><em>Pairs</em></h2>
+<p>Kita bisa membuat hal berpasangan seperti berikut:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="ot">p ::</span> (<span class="dt">Int</span>, <span class="dt">Char</span>)</a>
+<a class="sourceLine" id="cb21-2" data-line-number="2">p <span class="fu">=</span> (<span class="dv">3</span>, <span class="ch">'x'</span>)</a></code></pre></div>
+<p>Perhatikan bahwa notasi <code>(x,y)</code> digunakan untuk <strong>tipe</strong> dari <em>pair</em> dan <strong>nilai</strong> dari <em>pair</em>.</p>
+<p>Elemen dari sebuah <em>pair</em> bisa diekstrak dengan mencocokkan pola (<em>pattern matching</em>):</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="ot">sumPair ::</span> (<span class="dt">Int</span>,<span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb22-2" data-line-number="2">sumPair (x,y) <span class="fu">=</span> x <span class="fu">+</span> y</a></code></pre></div>
+<p>Haskell juga memiliki <em>triple</em>, <em>quadruple</em>, tapi sebaiknya jangan kalian gunakan. Akan kita lihat minggu depan, ada cara lebih baik untuk menyatukan tiga atau lebih informasi.</p>
+<h2 id="menggunakan-fungsi-dengan-beberapa-argumen">Menggunakan fungsi dengan beberapa argumen</h2>
+<p>Untuk aplikasi fungsi ke beberapa argumen, cukup letakkan argumen-argumen tersebut setelah fungsi, dipisahkan dengan spasi seperti ini:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="ot">f ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb23-2" data-line-number="2">f x y z <span class="fu">=</span> x <span class="fu">+</span> y <span class="fu">+</span> z</a>
+<a class="sourceLine" id="cb23-3" data-line-number="3">ex17 <span class="fu">=</span> f <span class="dv">3</span> <span class="dv">17</span> <span class="dv">8</span></a></code></pre></div>
+<p>Contoh di atas menerapkan fungsi <code>f</code> ke tiga argumen: <code>3</code>, <code>17</code>, dan dan <code>8</code>. Perhatikan juga sintaks tipe untuk fungsi dengan beberapa argumen seperti: <code>Arg1Type -&gt; Arg2Type -&gt; ... -&gt; ResultType</code>. Ini mungkin terlihat aneh (memang sudah seharusnya). Mengapa semuanya tanda panah? Bukannya lebih wajar kalau tipe untuk <code>f</code> berupa <code>Int Int Int -&gt; Int</code>? Sebenarnya, sintaks ini memang disengaja dan memiliki alasan yang mendalam dan indah, yang akan kita pelajari beberapa minggu lagi. Untuk sementara ini, kalian percaya saja dulu.</p>
+<p>Perhatikan bahwa <strong>aplikasi fungsi memiliki prioritas (<em>precedence</em>) lebih tinggi ketimbang operator <em>infix</em></strong>. Jadi penulisan seperti ini</p>
+<p><code>f 3 n+1 7</code></p>
+<p>adalah salah jika kalian ingin memberi <code>n+1</code> sebagai argumen kedua ke <code>f</code> karena akan di<em>parse</em> sebagai</p>
+<p><code>(f 3 n) + (1 7)</code>.</p>
+<p>Penulisan yang benar adalah:</p>
+<p><code>f 3 (n+1) 7</code>.</p>
+<h2 id="list">List</h2>
+<p>List adalah satu tipe data dasar di Haskell.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1">nums, range,<span class="ot"> range2 ::</span> [<span class="dt">Integer</span>]</a>
+<a class="sourceLine" id="cb24-2" data-line-number="2">nums   <span class="fu">=</span> [<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">19</span>]</a>
+<a class="sourceLine" id="cb24-3" data-line-number="3">range  <span class="fu">=</span> [<span class="dv">1</span><span class="fu">..</span><span class="dv">100</span>]</a>
+<a class="sourceLine" id="cb24-4" data-line-number="4">range2 <span class="fu">=</span> [<span class="dv">2</span>,<span class="dv">4</span><span class="fu">..</span><span class="dv">100</span>]</a></code></pre></div>
+<p>Haskell (seperti Python) juga memiliki <em>list comprehensions</em>. Kalian bisa mempelajarinya di <a href="http://learnyouahaskell.com/starting-out">LYAH</a>.</p>
+<p><em>String</em> hanyalah list karakter. Dengan kata lain, <code>String</code> hanyalah singkatan dari <code>[Char]</code>, dan sintak literal string (teks di dalam tanda kutip ganda) hanyalah singkatan untuk literal list <code>Char</code>.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">-- hello1 dan hello2 adalah sama.</span></a>
+<a class="sourceLine" id="cb25-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb25-3" data-line-number="3"><span class="ot">hello1 ::</span> [<span class="dt">Char</span>]</a>
+<a class="sourceLine" id="cb25-4" data-line-number="4">hello1 <span class="fu">=</span> [<span class="ch">'h'</span>, <span class="ch">'e'</span>, <span class="ch">'l'</span>, <span class="ch">'l'</span>, <span class="ch">'o'</span>]</a>
+<a class="sourceLine" id="cb25-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb25-6" data-line-number="6"><span class="ot">hello2 ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb25-7" data-line-number="7">hello2 <span class="fu">=</span> <span class="st">&quot;hello&quot;</span></a>
+<a class="sourceLine" id="cb25-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb25-9" data-line-number="9">helloSame <span class="fu">=</span> hello1 <span class="fu">==</span> hello2</a></code></pre></div>
+<p>Ini berarti semua fungsi di librari standar untuk memproses list juga bisa digunakan untuk memproses <code>String</code>.</p>
+<h2 id="membangun-list">Membangun list</h2>
+<p>List yang paling sederhana ialah list kosong:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1">emptyList <span class="fu">=</span> []</a></code></pre></div>
+<p>List lainnya dibangun dari list kosong dengan menggunakan operator <em>cons</em> , <code>(:)</code>. <em>Cons</em> menerima argumen sebuah elemen dan sebuah list, dan mengembalikan list baru dengan elemen tersebut ditambahkan ke depan list.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1">ex17 <span class="fu">=</span> <span class="dv">1</span> <span class="fu">:</span> []</a>
+<a class="sourceLine" id="cb27-2" data-line-number="2">ex18 <span class="fu">=</span> <span class="dv">3</span> <span class="fu">:</span> (<span class="dv">1</span> <span class="fu">:</span> [])</a>
+<a class="sourceLine" id="cb27-3" data-line-number="3">ex19 <span class="fu">=</span> <span class="dv">2</span> <span class="fu">:</span> <span class="dv">3</span> <span class="fu">:</span> <span class="dv">4</span> <span class="fu">:</span> []</a></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1">ex20 <span class="fu">=</span> [<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>] <span class="fu">==</span> <span class="dv">2</span> <span class="fu">:</span> <span class="dv">3</span> <span class="fu">:</span> <span class="dv">4</span> <span class="fu">:</span> []</a></code></pre></div>
+<p>Kita bisa melihat bahwa notasi <code>[2,3,4]</code> hanyalah singkatan untuk <code>2 : 3 : 4 : []</code>. Perhatikan juga bahwa ini adalah <em>singly linked lists</em>, BUKAN arrays.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co">-- Buat barisan dari iterasi hailstone dari bilangan awal.</span></a>
+<a class="sourceLine" id="cb29-2" data-line-number="2"><span class="ot">hailstoneSeq ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]</a>
+<a class="sourceLine" id="cb29-3" data-line-number="3">hailstoneSeq <span class="dv">1</span> <span class="fu">=</span> [<span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb29-4" data-line-number="4">hailstoneSeq n <span class="fu">=</span> n <span class="fu">:</span> hailstoneSeq (hailstone n)</a></code></pre></div>
+<p>Kita stop barisan <em>hailstone</em> ketika mencapai 1. Barisan <em>hailstone</em> untuk <code>n</code> terdiri dari <code>n</code> itu sendiri, diikuti dengan barisan dari <code>hailstone n</code> yang merupakan bilangan yang didapat dari menerapkan fungsi <code>hailstone</code> ke <code>n</code>.</p>
+<h2 id="fungsi-pada-list">Fungsi pada list</h2>
+<p>Kita bisa menulis fungsi pada list menggunakan pencocokan pola (<em>pattern matching</em>).</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="co">-- Hitung panjang sebuah list Integer.</span></a>
+<a class="sourceLine" id="cb30-2" data-line-number="2"><span class="ot">intListLength ::</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb30-3" data-line-number="3">intListLength []     <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb30-4" data-line-number="4">intListLength (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> intListLength xs</a></code></pre></div>
+<p>Klausa pertama menyatakan bahwa panjang dari sebuah list kosong adalah 0. Klausa kedua menyatakan jika input list berbentuk seperti <code>(x:xs)</code>, yaitu elemen pertama <code>x</code> disambung (<em>cons</em>) ke sisa list <code>xs</code>, maka panjang dari list tersebut ialah lebih dari satu panjangnya <code>xs</code>.</p>
+<p>Karena kita tidak menggunakan <code>x</code> sama sekali, kita bisa menggantinya dengan <em>underscore</em>: <code>intListLength (_:xs) = 1 + intListLength xs</code>.</p>
+<p>Kita juga bisa menggunakan pola bertumpuk (<em>nested patterns</em>):</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="ot">sumEveryTwo ::</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]</a>
+<a class="sourceLine" id="cb31-2" data-line-number="2">sumEveryTwo []         <span class="fu">=</span> []     <span class="co">-- Biarkan list kosong</span></a>
+<a class="sourceLine" id="cb31-3" data-line-number="3">sumEveryTwo (x<span class="fu">:</span>[])     <span class="fu">=</span> [x]    <span class="co">-- Biarkan list dengan elemen tunggal</span></a>
+<a class="sourceLine" id="cb31-4" data-line-number="4">sumEveryTwo (x<span class="fu">:</span>(y<span class="fu">:</span>zs)) <span class="fu">=</span> (x <span class="fu">+</span> y) <span class="fu">:</span> sumEveryTwo zs</a></code></pre></div>
+<p>Perhatikan bagaimana klausa terakhir mencocokkan list yang dimulai dengan <code>x</code> lalu diikuti dengan <code>y</code> dan diikuti dengan list <code>zs</code>. Kita sebenarnya tidak memerlukan tanda kurung tambahan, jadi bisa juga ditulis menjadi <code>sumEveryTwo (x:y:zs) = ...</code>.</p>
+<h2 id="kombinasi-fungsi">Kombinasi fungsi</h2>
+<p>Menggabungkan fungsi-fungsi sederhana untuk membangun fungsi yang kompleks merupakan cara memprogram Haskell yang baik.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co">-- Jumlah hailstone yang dibutuhkan untuk mencapai 1</span></a>
+<a class="sourceLine" id="cb32-2" data-line-number="2"><span class="co">-- dari bilangan awal.</span></a>
+<a class="sourceLine" id="cb32-3" data-line-number="3"><span class="ot">hailstoneLen ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb32-4" data-line-number="4">hailstoneLen n <span class="fu">=</span> intListLength (hailstoneSeq n) <span class="fu">-</span> <span class="dv">1</span></a></code></pre></div>
+<p>Ini mungkin terlihat tidak efisien bagi kalian. Fungsi tersebut membangun seluruh barisan <em>hailstone</em> lalu menghitung panjangnya. Tentunya boros memori, bukan? Ternyata tidak! Karena Haskell dievaluasi secara <em>lazy</em>, tiap elemen hanya akan dibangun ketika dibutuhkan. Jadi, pembuatan barisan dan penghitungan panjang dilakukan secara berselingan. Seluruh komputasi hanya memakai memori O(1), tak peduli sepanjang apapun barisannya (Sebenarnya ini sedikit dusta tapi penjelasannya dan cara mengoreksinya harus menunggu beberapa minggu).</p>
+<p>Kita akan belajar lebih jauh mengenai evaluasi <em>lazy</em> di Haskell beberapa minggu lagi. Untuk saat ini cukup ketahui: jangan takut untuk menulis fungsi kecil yang mengubah seluruh struktur data, dan menggabungkan fungsi-fungsi tersebut untuk membangun fungsi yang lebih kompleks. Mungkin akan terasa ganjil pada awalnya, tapi beginilah cara menulis program Haskell yang idiomatis dan efisien. Lagipula, setelah terbiasa, kalian akan merasa nyaman dengannya.</p>
+<h2 id="sepatah-kata-tentang-pesan-kesalahan-error-message">Sepatah kata tentang pesan kesalahan (<em>error message</em>)</h2>
+<p>Sebenarnya, lima kata:</p>
+<p><strong>Jangan takut dengan pesan kesalahan</strong></p>
+<p>Pesan kesalahan dari GHC bisa panjang dan terlihat menakutkan. Biasanya pesan tersebut panjang bukan karena tidak jelas, tapi karena mengandung banyak informasi. Sebagai contoh:</p>
+<pre><code>Prelude&gt; 'x' ++ &quot;foo&quot;
+
+&lt;interactive&gt;:1:1:
+    Couldn't match expected type `[a0]' with actual type `Char'
+    In the first argument of `(++)', namely 'x'
+    In the expression: 'x' ++ &quot;foo&quot;
+    In an equation for `it': it = 'x' ++ &quot;foo&quot;</code></pre>
+<p>Pesan pertama: “Couldn’t match expected type <code>[a0]</code> with actual type <code>Char</code>”, yang berarti tidak bisa mencocokkan tipe yang diharapkan <code>[a0]</code> dengan tipe yang ada <code>Char</code>. Ini berarti <em>sesuatu</em> diharapkan bertipe list, tapi malah bertipe <code>Char</code>. <em>Sesuatu</em> apa? Baris berikutnya berkata, argumen pertama dari <code>(++)</code> yang salah, bernama <code>x</code>. Baris berikutnya lagi membuat semakin jelas. Masalahnya adalah: <code>x</code> bertipe <code>Char</code> seperti yang dikatakan oleh baris pertama. Mengapa diharapkan bertipe list? Karena itu digunakan sebagai argumen pertama <code>(++)</code>, yang menerima list sebagai argumen pertama.</p>
+<p>Ketika menerima pesan kesalahan yang panjang, janganlah takut. Ambil nafas panjang, dan baca dengan seksama. Mungkin kalian tidak akan mengerti seluruhnya, tapi kalian akan belajar banyak dan mungkin bisa mendapatkan informasi bagaimana cara mengatasinya.</p></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>

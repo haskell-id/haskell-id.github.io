@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: 06-laziness</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../"><img src="../static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="../install.html">Instalasi</a>
+        <a href="../lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><!--
+{-# OPTIONS_GHC -Wall #-}
+-->
+<h1 id="evaluasi-lazy">Evaluasi <em>lazy</em></h1>
+<p>Bacaan tambahan:</p>
+<ul>
+<li><a href="http://haskell.org/haskellwiki/Foldr_Foldl_Foldl%27">foldr foldl foldl’</a> dari Haskell wiki</li>
+</ul>
+<p>Di hari pertama kelas, saya mengatakan bahwa Haskell bersifat <em>lazy</em> (translasi: enggan, malas), dan berjanji akan menjelaskan lebih lanjut apa artinya di lain waktu. Sekaranglah saatnya!</p>
+<h2 id="evaluasi-strict">Evaluasi <em>strict</em></h2>
+<p>Sebelum membahas evaluasi <em>lazy</em> (literal: malas, enggan), kita akan melihat beberapa contoh dari kebalikannya, evalusi <em>strict</em> (literal: tegas, kaku)</p>
+<p>Pada evaluasi <em>strict</em>, argumen fungsi akan terevaluasi <em>sebelum</em> diberikan ke fungsi. Sebagai contoh, misalkan kita telah mendefinisikan</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">f x y <span class="fu">=</span> x <span class="fu">+</span> <span class="dv">2</span></a></code></pre></div>
+<p>Di bahasa yang <em>strict</em>, <code>f 5 (29^35792)</code> pertama kali akan mengevaluasi <code>5</code> (sudah selesai) dan <code>29^35792</code> (yang harus dikerjakan terlebih dulu) sebelum memberikan hasil-hasil tersebut ke <code>f</code>.</p>
+<p>Tentu dalam contoh tersebut hal ini terkesan bodoh, karena <code>f</code> mengabaikan argumen kedua. Sehingga seluruh usaha untuk menghitung <code>29^35792</code> terbuang percuma. Jadi kenapa kita memerlukannya?</p>
+<p>Keuntungan dari evaluasi <em>strict</em> ialah kemudahan untuk menebak <em>kapan</em> dan <em>urutan</em> sesuatu akan terjadi. Biasanya bahasa yang <em>strict</em> menjelaskan urutan evaluasi argumen-argumen dari fungsi (dari kiri ke kanan misalnya).</p>
+<p>Misalkan kita menulis ini di Java</p>
+<pre><code>f (release_monkeys(), increment_counter())</code></pre>
+<p>Kita tahu bahwa kera-kera akan dibebaskan, lalu <em>counter</em> akan bertambah, dan hasil-hasil tersebut akan diberikan ke <code>f</code>. Tidak peduli apakah <code>f</code> akan menggunakan hasil-hasil tersebut atau tidak.</p>
+<p>Jika hal-hal berikut:</p>
+<ul>
+<li>Evaluasi atau tidaknya kedua argumen secara independen</li>
+<li>Urutan evaluasi kedua argumen tersebut</li>
+</ul>
+<p>bergantung kepada apakah <code>f</code> akan menggunakan hasilnya, tentunya akan sangat membingungkan. Ketika “efek samping” seperti ini diperbolehkan, kita perlu evaluasi <em>strict</em>.</p>
+<h2 id="efek-samping-dan-purity">Efek samping dan <em>purity</em></h2>
+<p>Jadi yang sebenarnya bermasalah adalah keberadaan <em>efek samping</em> (<em>side effect</em>). Yang dimaksud dengan efek samping ialah “apapun yang dapat menyebabkan evaluasi sebuah ekspresi berinteraksi dengan sesuatu di luar ekspresi itu sendiri”. Akar permasalahannya adalah interaksi dengan dunia luar tersebut sensitif terhadap waktu. Sebagai contoh:</p>
+<ul>
+<li>Mengubah variabel global — ini bermasalah karena bisa mempengaruhi evaluasi ekspresi-ekspresi lain</li>
+<li>Mencetak ke layar — ini bermasalah karena bisa saja ini diperlukan dalam urutan tertentu terhadap ekspresi lain yang juga melakukan pencetakan ke layar</li>
+<li>Membaca berkas atau jaringan — ini bermasalah karena isi dari berkas bisa mempengaruhi hasil evaluasi ekspresi</li>
+</ul>
+<p>Seperti yang kita lihat, evaluasi <em>lazy</em> membuat sulit untuk mengetahui kapan evaluasi terjadi, sehingga menyertakan efek samping ke dalam bahasa yang <em>lazy</em> menjadi sangat tidak intuitif. Secara sejarah, inilah alasan mengapa Haskell <em>pure</em> (literal: murni). Pada awalnnya, perancang Haskell berniat untuk membuat bahasa yang <em>lazy</em>, dan kemudian dengan cepat menyadari bahwa hal tersebut mustahil jika tidak melarang efek samping.</p>
+<p>Tapi.. sebuah bahasa tanpa efek samping tidaklah begitu berguna. Kalian hanya akan bisa me-<em>load</em> program di <em>interpreter</em> dan mengevaluasi ekspresi-ekspresi. Kalian tidak akan bisa mendapatkan masukan dari pengguna, atau mencetak ke layar, atau membaca berkas. Tantangan yang dihadapi para perancang Haskell adalah menyediakan cara untuk mengizinkan efek-efek tersebut dengan terkontrol dan tidak mengganggu <em>purity</em> dari bahasa itu sendiri. Akhirnya mereka berhasil menyediakannya (bernama <code>IO</code> monad) yang akan kita bahas dalam beberapa minggu kemudian.</p>
+<h2 id="evaluasi-lazy-1">Evaluasi <em>lazy</em></h2>
+<p>Setelah pembahasan evaluasi <em>strict</em>, sekarang mari kita lihat seperti apa evaluasi <em>lazy</em>. Di dalam evaluasi <em>lazy</em>, evaluasi argumen-argumen fungsi “ditunda selama mungkin”. Argumen-argumen tersebut tidak akan dievaluasi sampai benar-benar diperlukan. Ketika ekspresi diberikan ke fungsi sebagai argumen, ekspresi tersebut disimpan sebagai ekspresi yang belum dievaluasi (disebut “<em>thunk</em>”, entah mengapa).</p>
+<p>Sebagai contoh, ketika mengevaluasi <code>f 5 (29^35792)</code>, argumen kedua akan disimpan sebagai <em>thunk</em> tanpa ada komputasi dan <code>f</code> akan langsung dipanggil. Karena <code>f</code> tak pernah menggunakan argumen kedua, <em>thunk</em> tersebut akan dibuang oleh <em>garbage collector</em>.</p>
+<h2 id="evaluasi-dengan-pencocokkan-pola">Evaluasi dengan pencocokkan pola</h2>
+<p>Jadi kapankah kita perlu untuk mengevaluasi ekspresi? Contoh di atas mengkhususkan pada penggunaan argumen pada sebuah fungsi, tetapi itu bukanlah suatu perbedaan yang paling utama. Lihatlah contoh berikut:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">f1 ::</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> [<span class="dt">Maybe</span> a]</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">f1 m <span class="fu">=</span> [m,m]</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="ot">f2 ::</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">f2 <span class="dt">Nothing</span>  <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">f2 (<span class="dt">Just</span> x) <span class="fu">=</span> [x]</a></code></pre></div>
+<p><code>f1</code> dan <code>f2</code> menggunakan argumen-argumen tetapi ada perbedaan besar di antara keduanya. Meskipun <code>f1</code> menggunakan argumen <code>m</code>, dia tidak perlu tahu apapun tentang argumen tersebut. <code>m</code> bisa merupakan ekspresi yang sepenuhnya tidak terevaluasi, dan letakkan ekspresi tersebut ke dalam list. Dengan kata lain, hasil dari <code>f1 e</code> tidak bergantung pada bentuk dari <code>e</code>.</p>
+<p>Di sisi lain, <code>f2</code> perlu tahu sesuatu tentang argumennya untuk bekerja lebih jauh. Apakah dikonstruksi dengan <code>Nothing</code> atau <code>Just</code>? Untuk mengevaluasi <code>f2 e</code> kita perlu mengevaluasi <code>e</code> terlebih dahulu, karena hasil dari <code>f2</code> bergantung pada bentuk dari <code>e</code>.</p>
+<p>Satu hal lagi yang patut diingat ialah <em>thunks</em> hanya dievaluasi <strong>secukupnya</strong>. Sebagai contoh, kita ingin mengevaluasi <code>f2 (safeHead [3^500, 49])</code>. <code>f2</code> akan memaksa evaluasi <code>safeHead [3^500, 49]</code>, yang akan menghasilkan <code>Just (3^500)</code>. Perhatikan bahwa <code>3^500</code> tidak dievaluasi, karena <code>safeHead</code> tidak memerlukannya, demikian juga dengan <code>f2</code>. Apakah <code>3^500</code> akan dievaluasi nantinya bergantung pada penggunaan hasil dari <code>f2</code>.</p>
+<p>Slogannnya ialah “<em>evaluasi dengan pencocokkan pola</em>”. Hal-hal yang perlu diingat:</p>
+<ul>
+<li><p>Ekspresi hanya dievaluasi ketika polanya cocok</p></li>
+<li><p>…dan hanya seperlunya saja!</p></li>
+</ul>
+<p>Mari kita lihat contoh yang lebih menarik: kita akan mengevaluasi <code>take 3 (repeat 7)</code>. Sebagai referensi, berikut adalah definisi dari <code>repeat</code> dan <code>take</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">repeat<span class="ot"> ::</span> a <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">repeat x <span class="fu">=</span> x <span class="fu">:</span> repeat x</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">take<span class="ot"> ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">take n _      <span class="fu">|</span> n <span class="fu">&lt;=</span> <span class="dv">0</span> <span class="fu">=</span>  []</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">take _ []              <span class="fu">=</span>  []</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">take n (x<span class="fu">:</span>xs)          <span class="fu">=</span>  x <span class="fu">:</span> take (n<span class="fu">-</span><span class="dv">1</span>) xs</a></code></pre></div>
+<p>Evaluasi secara bertahap akan berjalan seperti ini:</p>
+<pre><code>  take 3 (repeat 7)
+      { 3 &lt;= 0 bernilai False, jadi kita lanjut ke klausa kedua, yang
+    perlu mencocokkan dengan argumen kedua. Kita perlu ekspansi
+    repeat 7 satu kali. }
+= take 3 (7 : repeat 7)
+      { klausa kedia tidak cocok tapi klausa ketiga cocok. Perhatikan
+        bahwa (3-1) belum terevaluasi! }
+= 7 : take (3-1) (repeat 7)
+      { Untuk memutuskan pada klausa pertama, kita perlu mengecek (3-1)
+        &lt;= 0 yang memerlukan evaluasi (3-1). }
+= 7 : take 2 (repeat 7)
+      { 2 &lt;= 0 bernilai False, jadi kita perlu ekspansi repeat 7 lagi. }
+= 7 : take 2 (7 : repeat 7)
+      { Sisanya serupa. }
+= 7 : 7 : take (2-1) (repeat 7)
+= 7 : 7 : take 1 (repeat 7)
+= 7 : 7 : take 1 (7 : repeat 7)
+= 7 : 7 : 7 : take (1-1) (repeat 7)
+= 7 : 7 : 7 : take 0 (repeat 7)
+= 7 : 7 : 7 : []</code></pre>
+<p>Catatan: Meski evaluasi bisa diimplementasikan seperti di atas, kebanyakan <em>compiler</em> Haskell melakukan hal lebih kompleks. Contohnya, GHC menggunakan teknik <em>graph reduction</em>, di mana ekspresi yang dievaluasi direpresentasikan dalam bentuk <em>graph</em> sehingga sub-ekspresi bisa berbagi <em>pointer</em> ke sub-ekspresi yang sama. Hal ini menjamin tak ada duplikasi pengerjaan. Sebagai contoh, jika <code>f x = [x,x]</code>, evaluasi <code>f (1+1)</code> hanya akan melakukan sekali penjumlahan karena sub-ekspresi <code>1+1</code> akan hanya ada satu, terbagi untuk dua buah <code>x</code>.</p>
+<h2 id="konsekuensi">Konsekuensi</h2>
+<p><em>Laziness</em> memiliki konsekuensi yang menarik, mengganggu, dan tersembunyi. Mari kita lihat beberapa di antaranya.</p>
+<p><strong>Purity</strong> (Kemurnian)</p>
+<p>Seperti yang telah kita lihat, pemilihan evaluasi <em>lazy</em> <em>memaksa</em> kita juga untuk memilih <em>purity</em> (dengan asumsi kita tak mau menyyulitkan programer lain).</p>
+<p><strong>Memahami penggunaan ruang</strong></p>
+<p><em>Laziness</em> tidak selalu memberikan keuntungan. Salah satu kekurangannya ialah terkadang kita akan kesulitan untuk mengetahui penggunaan ruang (<em>space</em>) di program. Perhatikan contoh berikut (yang terlihat biasa saja):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- Fungsi di standard library foldl, disediakan sebagai referensi</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">foldl<span class="ot"> ::</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">foldl _ z []     <span class="fu">=</span> z</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">foldl f z (x<span class="fu">:</span>xs) <span class="fu">=</span> foldl f (f z x) xs</a></code></pre></div>
+<p>Mari kita lihat bagaimana evaluasi berjalan ketika kita mengevaluasi <code>foldl (+) 0 [1,2,3]</code> (yang akan menjumlahkan semua bilangan di list):</p>
+<pre><code>  foldl (+) 0 [1,2,3]
+= foldl (+) (0+1) [2,3]
+= foldl (+) ((0+1)+2) [3]
+= foldl (+) (((0+1)+2)+3) []
+= (((0+1)+2)+3)
+= ((1+2)+3)
+= (3+3)
+= 6</code></pre>
+<p>Karena nilai dari akumulator tidak diperlukan hingga selesai rekursi seluruh list, akumulator membangun dirinya tiap langkah menjadi satu ekspresi besar yang belum terevaluasi <code>(((0+1)+2)+3)</code>. Pada akhirnya, ekspresi tersebut tereduksi menjadi sebuah nilai. Setidaknya, ada dua masalah dengan hal ini. Pertama, tidak efisien. Sebenarnya tidak perlu untuk memindahkan semua bilangan dari list ke sesuatu yang menyerupai list (<em>thunk akumulator</em>) sebelum menjumlahkan semuanya. Masalah kedua lebih tersembunyi. Evaluasi <code>(((0+1)+2)+3)</code> membutuhkan <code>3</code> dan <code>2</code> untuk dimasukkan ke <code>stack</code> terlebih dahulu sebelum menghitung <code>0+1</code>. Hal ini tidak masalah untuk contoh sederhana, tapi bermasalah untuk list yang sangat besar karena mungkin saja tidak ada ruang yang cukup untuk <code>stack</code> sehingga menyebabkan <code>stack overflow</code>.</p>
+<p>Solusinya adalah dengan menggunakan fungsi <code>foldl'</code>, bukan <code>foldl</code>. <code>foldl'</code> mengevaluasi argumen kedua (akumulator) sebelum melanjutkan, sehingga <em>thunk</em> tidak bertambah besar.</p>
+<pre><code>  foldl' (+) 0 [1,2,3]
+= foldl' (+) (0+1) [2,3]
+= foldl' (+) 1 [2,3]
+= foldl' (+) (1+2) [3]
+= foldl' (+) 3 [3]
+= foldl' (+) (3+3) []
+= foldl' (+) 6 []
+= 6</code></pre>
+<p>Terlihat bahwa <code>foldl'</code> melakukan penjumlahan secara langsung. Terkadang <em>laziness</em> menimbulkan masalah. Jika demikian kita harus membuat program kita menjadi kurang <em>lazy</em>.</p>
+<p>Jika tertarik mempelajari bagaimana <code>foldl'</code> melakukannya, kalian <a href="http://www.haskell.org/haskellwiki/Seq">membaca tentang <code>seq</code> di Haskell wiki</a>.</p>
+<p><strong><em>Short-circuiting operators</em></strong></p>
+<p>Di beberapa bahasa (Java, C++) operator <em>boolean</em> <code>&amp;&amp;</code> dan <code>||</code> (AND dan OR) bersifat <em>short-circuiting</em>. Contohnya, jika evaluasi argumen pertama dari <code>&amp;&amp;</code> bernilai <code>False</code>, maka seluruh ekspresi akan langsung bernilai <code>False</code> tanpa menyentuh argumen kedua. Akan tetapi, perilaku ini harus diatur dalam standar Java dan C++ sebagai kasus khusus. Biasanya, di bahasa yang <em>strict</em>, kedua argumen akan dievaluasi sebelum pemanggilan fungsi. Jadi sifat <em>short-circuiting</em> dari <code>&amp;&amp;</code> dan <code>||</code> merupakan pengecualian dari semantik bahasa yang <em>strict</em>.</p>
+<p>Di Haskell kita bisa mendefinisikan operator yang <em>short-circuiting</em> tanpa perlakuan istimewa. Bahkan sebenarnya <code>(&amp;&amp;)</code> dan <code>(||)</code> hanyalah fungsi pustaka biasa. Berikut definisi dari <code>(&amp;&amp;)</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">(&amp;&amp;) ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="dt">True</span>  <span class="fu">&amp;&amp;</span> x <span class="fu">=</span> x</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="dt">False</span> <span class="fu">&amp;&amp;</span> _ <span class="fu">=</span> <span class="dt">False</span></a></code></pre></div>
+<p>Perhatikan bahwa definisi dari <code>(&amp;&amp;)</code> tidak mencocokkan pola pada argumen kedua. Terlebih lagi jika argumen pertama bernilai <code>False</code>, argumen kedua akan diabaikan. Karena <code>(&amp;&amp;)</code> sama sekali tidak mencocokkan pola pada argumen kedua, maka fungsi ini juga bersifat <em>short-circuiting</em> sama seperti operator <code>&amp;&amp;</code> di Java atau C++.</p>
+<p>Perhatikan bahwa <code>(&amp;&amp;)</code> bisa juga didefinisikan seperti ini:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">(&amp;&amp;!) ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="dt">True</span>  <span class="fu">&amp;&amp;!</span> <span class="dt">True</span>  <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="dt">True</span>  <span class="fu">&amp;&amp;!</span> <span class="dt">False</span> <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="dt">False</span> <span class="fu">&amp;&amp;!</span> <span class="dt">True</span>  <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5"><span class="dt">False</span> <span class="fu">&amp;&amp;!</span> <span class="dt">False</span> <span class="fu">=</span> <span class="dt">False</span></a></code></pre></div>
+<p>Meskipun versi tersebut menerima dan menghasilkan nilai yang sama seperti sebelumnya, terdapat perbedaan perilaku. sebagai contoh:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="dt">False</span> <span class="fu">&amp;&amp;</span>  (<span class="dv">34</span><span class="fu">^</span><span class="dv">9784346</span> <span class="fu">&gt;</span> <span class="dv">34987345</span>)</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="dt">False</span> <span class="fu">&amp;&amp;!</span> (<span class="dv">34</span><span class="fu">^</span><span class="dv">9784346</span> <span class="fu">&gt;</span> <span class="dv">34987345</span>)</a></code></pre></div>
+<p>Keduanya akan terevaluasi menjadi <code>False</code>, tapi yang kedua akan menghabiskan waktu lebih lama. Bagaimana dengan yang berikut ini?</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="dt">False</span> <span class="fu">&amp;&amp;</span>  (head [] <span class="fu">==</span> <span class="ch">'x'</span>)</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="dt">False</span> <span class="fu">&amp;&amp;!</span> (head [] <span class="fu">==</span> <span class="ch">'x'</span>)</a></code></pre></div>
+<p>Yang pertama akan bernilai <code>False</code> lagi, sedangkan yang kedua akan <em>crash</em>. Cobalah!</p>
+<p>Semua ini menunjukkan bahwa ada beberapa isu menarik berkaitan dengan <em>lazyness</em> yang perlu diperhatikan ketika mendefinisikan sebuah fungsi.</p>
+<p><strong>Struktur kontrol buatan pengguna</strong></p>
+<p>Dengan mengembangkan ide operator <em>short-circuiting</em> lebih jauh, kita bisa membuat <em>struktur kontrol</em> kita sendiri di Haskell.</p>
+<p>Sebagian besar bahasa pemrograman memiliki konstruk <code>if</code> bawaan. Ini sedikit mirip dengan operator <em>Boolean</em> yang <em>short-circuiting</em>. Berdasarkan nilai yang dites, <code>if</code> hanya akan mengeksekusi atau mengevaluasi salah satu dari dua cabang.</p>
+<p>Di Haskell kita bisa mendefinisikan <code>if</code> sebagai sebuah fungsi pustaka!</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">if' ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">if' <span class="dt">True</span>  x _ <span class="fu">=</span> x</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">if' <span class="dt">False</span> _ y <span class="fu">=</span> y</a></code></pre></div>
+<p>Tentu Haskell memiliki ekspresi <code>if</code> bawaan tapi saya tak pernah mengerti mengapa. Mungkin para desainer Haskell beranggapan orang-orang akan mengharapkannya. “Apa? Bahasa ini tidak punya <em>if</em>!?” Lagipula, <code>if</code> jarang digunakan di Haskell. Kebanyakan kita lebih suka menggunakan pencocokkan pola atau <em>guards</em>.</p>
+<p>Kita juga bisa mendefinisikan struktur kontrol lain. Kita akan lihat contohnya nanti ketika membahas monad.</p>
+<p><strong>Struktur data tak terhingga</strong></p>
+<p>Evaluasi <em>lazy</em> memungkinkan kita untuk memiliki struktur data tak terhingga. Kita telah melihat beberapa contohnya, seperti <code>repeat 7</code> yang merupakan list berisikan <code>7</code> sebanyak tak terhingga. Mendefinisikan struktur data tak terhingga sebenarnya hanyalah menciptakan <code>thunk</code>, yang bisa kita ibaratkan sebagai “benih” di mana seluruh struktur data tersebut bisa tumbuh sesuai kebutuhan.</p>
+<p>Contoh praktis lainnya ialah data yang <em>terlalu besar</em>, seperti <em>tree</em> yang merepresentasikan <em>state</em> dari sebuah <em>game</em> (seperti catur atau go). Meski <em>tree</em> tersebut terbatas secara teori, tapi bisa menjadi terlalu besar untuk memori. Dengan Haskell, kita bisa mendefinisikan <em>tree</em> untuk semua kemungkinan langkah di <em>game</em>, lalu membuat algoritma terpisah untuk menjelajahi <em>tree</em> tersebut sesuai kemauan. Hanya bagian <em>tree</em> yang terjelajah yang akan disediakan.</p>
+<p><strong>Pemrograman <em>pipelining/wholemeal</em></strong></p>
+<p>Seperti yang telah disebutkan sebelumnya, melakukan transformasi bertahap (<em>pipelined</em>) terhadap struktur data yang besar bisa terjadi secara efisien dalam penggunaan memori. Sekarang kita bisa tahu mengapa: karena <em>lazy</em>, tiap operasi terjadi secara bertahap. Hasil hanya ada jika dibutuhkan oleh proses selanjutnya dalam <em>pipeline</em>.</p>
+<p><strong>Pemrograman dinamis</strong></p>
+<p>Satu contoh menarik hasil dari evaluasi <em>lazy</em> ialah pemrograman dinamis (<a href="http://en.wikipedia.org/wiki/Dynamic_programming"><em>dynamic programming</em></a>). Biasanya kita harus sangat berhati-hati dalam mengisi tabel pemrograman dinamis sesuai urutan, sehingga tiap kali kita menghitung nilai dari sebuah sel, dependensinya sudah terhitung. Jika urutannya salah, hasil yang didapat juga salah.</p>
+<p>Dengan evaluasi <em>lazy</em> di Haskell, kita bisa menggunakan Haskell <em>runtime</em> untuk mengerjakan pengurutan evaluasi tersebut! Sebagai contoh, berikut kode Haskell untuk memecahkan <a href="http://en.wikipedia.org/wiki/Knapsack_problem">0-1 knapsack problem</a>. Perhatikan bagaimana kita mendefinisikan <em>array</em> <code>m</code> dalam bentuk dirinya sendiri (rekursif), dan membiarkan evaluasi <em>lazy</em> mencari urutan yang benar untuk menghitung sel-selnya.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Data.Array</span></a>
+<a class="sourceLine" id="cb14-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb14-3" data-line-number="3"><span class="ot">knapsack01 ::</span> [<span class="dt">Double</span>]   <span class="co">-- values </span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">           <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]  <span class="co">-- nonnegative weights</span></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">           <span class="ot">-&gt;</span> <span class="dt">Integer</span>    <span class="co">-- knapsack size</span></a>
+<a class="sourceLine" id="cb14-6" data-line-number="6">           <span class="ot">-&gt;</span> <span class="dt">Double</span>     <span class="co">-- max possible value</span></a>
+<a class="sourceLine" id="cb14-7" data-line-number="7">knapsack01 vs ws maxW <span class="fu">=</span> m<span class="fu">!</span>(numItems<span class="fu">-</span><span class="dv">1</span>, maxW)</a>
+<a class="sourceLine" id="cb14-8" data-line-number="8">  <span class="kw">where</span> numItems <span class="fu">=</span> length vs</a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">        m <span class="fu">=</span> array ((<span class="fu">-</span><span class="dv">1</span>,<span class="dv">0</span>), (numItems<span class="fu">-</span><span class="dv">1</span>, maxW)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb14-10" data-line-number="10">              [((<span class="fu">-</span><span class="dv">1</span>,w), <span class="dv">0</span>) <span class="fu">|</span> w <span class="ot">&lt;-</span> [<span class="dv">0</span> <span class="fu">..</span> maxW]] <span class="fu">++</span></a>
+<a class="sourceLine" id="cb14-11" data-line-number="11">              [((i,<span class="dv">0</span>), <span class="dv">0</span>) <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span> <span class="fu">..</span> numItems<span class="fu">-</span><span class="dv">1</span>]] <span class="fu">++</span></a>
+<a class="sourceLine" id="cb14-12" data-line-number="12">              [((i,w), best) </a>
+<a class="sourceLine" id="cb14-13" data-line-number="13">                  <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span> <span class="fu">..</span> numItems<span class="fu">-</span><span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb14-14" data-line-number="14">                  , w <span class="ot">&lt;-</span> [<span class="dv">1</span> <span class="fu">..</span> maxW]</a>
+<a class="sourceLine" id="cb14-15" data-line-number="15">                  , <span class="kw">let</span> best</a>
+<a class="sourceLine" id="cb14-16" data-line-number="16">                          <span class="fu">|</span> ws<span class="fu">!!</span>i <span class="fu">&gt;</span> w  <span class="fu">=</span> m<span class="fu">!</span>(i<span class="fu">-</span><span class="dv">1</span>, w)</a>
+<a class="sourceLine" id="cb14-17" data-line-number="17">                          <span class="fu">|</span> otherwise <span class="fu">=</span> max (m<span class="fu">!</span>(i<span class="fu">-</span><span class="dv">1</span>, w)) </a>
+<a class="sourceLine" id="cb14-18" data-line-number="18">                                            (m<span class="fu">!</span>(i<span class="fu">-</span><span class="dv">1</span>, w <span class="fu">-</span> ws<span class="fu">!!</span>i) <span class="fu">+</span> vs<span class="fu">!!</span>i)</a>
+<a class="sourceLine" id="cb14-19" data-line-number="19">              ]</a>
+<a class="sourceLine" id="cb14-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb14-21" data-line-number="21">example <span class="fu">=</span> knapsack01 [<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">10</span>] [<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">9</span>] <span class="dv">20</span></a></code></pre></div></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>

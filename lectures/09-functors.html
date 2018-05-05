@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: 09-functors</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../"><img src="../static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="../install.html">Instalasi</a>
+        <a href="../lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><p><!-- CLASS
+
+> {-# OPTIONS_GHC -Wall #-}
+>
+> import Prelude hiding (Functor(..))
+
+--></p>
+<h1 id="functor"><em>Functor</em></h1>
+<p>Bacaan tambahan:</p>
+<ul>
+<li><em>Learn You a Haskell</em>, <a href="http://learnyouahaskell.com/making-our-own-types-and-typeclasses#the-functor-typeclass"><em>The Functor typeclass</em></a></li>
+<li><a href="http://www.haskell.org/haskellwiki/Typeclassopedia"><em>Typeclassopedia</em></a></li>
+</ul>
+<h2 id="motivasi">Motivasi</h2>
+<p>Dalam beberapa minggu terakhir kita telah melihat beberapa fungsi yang dirancang untuk “memetakan” (<em>map</em>) sebuah fungsi ke tiap elemen di dalam sesuatu yang menyerupai <em>container</em>. Seperti:</p>
+<ul>
+<li><p><code>map :: (a -&gt; b) -&gt; [a] -&gt; [b]</code></p></li>
+<li><p><code>treeMap :: (a -&gt; b) -&gt; Tree a -&gt; Tree b</code></p></li>
+<li><p>Di tugas 5 banyak yang melakukan hal yang serupa ketika harus menerapkan <code>eval :: ExprT -&gt; Int</code> ke sebuah <code>Maybe ExprT</code> untuk mendapatkan sebuah <code>Maybe Int</code>.</p>
+<p><code>maybeEval :: (ExprT -&gt; Int) -&gt; Maybe ExprT -&gt; Maybe Int</code></p>
+<p><code>maybeMap :: (a -&gt; b) -&gt; Maybe a -&gt; Maybe b</code></p></li>
+</ul>
+<p>Terdapat pengulangan pola di sini, dan sebagai programer Haskell yang baik kita harus tahu bagaimana cara menggeneralisirnya! Jadi yang mana yang serupa dari tiap contoh, dan mana yang berbeda?</p>
+<p>Yang berbeda tentu <em>container</em> yang dipetakan terhadap fungsi:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">thingMap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</a></code></pre></div>
+<p>Akan tetapi apa sebenarnya <em>container</em> ini? Bisakah kita <em>assign</em> variabel tipe seperti <code>f</code> ke <em>container</em> tersebut?</p>
+<h2 id="bahasan-singkat-tentang-kind">Bahasan singkat tentang <em>kind</em></h2>
+<p>Seperti halnya ekspresi yang memiliki tipe, tipe juga memiliki “tipe”, yang disebut <em>kind</em> (translasi: jenis). Sebelum kalian bertanya: tidak, tak ada lagi tingkat di atas <em>kind</em> – setidaknya di Haskell. Di <code>ghci</code> kita bisa menanyakan <em>kind</em> dari tipe dengan menggunakan <code>:kind</code>. Sebagai contoh, mari kita cari tahu apa <em>kind</em> dari <code>Int</code>:</p>
+<pre><code>Prelude&gt; :k Int
+Int :: *</code></pre>
+<p>Kita lihat bahwa <code>Int</code> memiliki <em>kind</em> <code>*</code>. Sebenarnya tiap tipe dari sebuah nilai memiliki <em>kind</em> <code>*</code>.</p>
+<pre><code>Prelude&gt; :k Bool
+Bool :: *
+Prelude&gt; :k Char
+Char :: *
+Prelude&gt; :k Maybe Int
+Maybe Int :: *</code></pre>
+<p>Jika <code>Maybe Int</code> memiliki <em>kind</em> <code>*</code>, bagaimana dengan <code>Maybe</code>? Perhatikan bahwa tidak ada nilai untuk tipe <code>Maybe</code>. Terdapat nilai untuk tipe <code>Maybe Int</code>, dan tipe <code>Maybe Bool</code>, tapi tidak untuk tipe <code>Maybe</code>. Tapi <code>Maybe</code> merupakan sesuatu yang menyerupai tipe yang valid. Jadi apa dong? Apa <em>kind</em> yang dimilikinya? Mari tanyakan <code>ghci</code>:</p>
+<pre><code>Prelude&gt; :k Maybe
+Maybe :: * -&gt; *</code></pre>
+<p><code>ghci</code> barkata bahwa <code>Maybe</code> memiliki <em>kind</em> <code>* -&gt; *</code>. <code>Maybe</code> bisa dikatakan sebagai sebuah fungsi terhadap tipe. Kita biasa menyebutnya <em>type constructor</em> (konstruktor tipe). <code>Maybe</code> menerima input tipe dengan <em>kind</em> <code>*</code>, dan menghasilkan sebuah tipe lain dengan <em>kind</em> <code>*</code>. Sebagai contoh, dia bisa menerima input <code>Int :: *</code> dan menghasilkan tipe baru <code>Maybe Int :: *</code>.</p>
+<p>Adakah konstruktor tipe lain dengan <em>kind</em> <code>* -&gt; *</code>? Tentunya. Contohnya <code>Tree</code>, atau konstruktor tipe list yang ditulis sebagai <code>[]</code>.</p>
+<pre><code>Prelude&gt; :k []
+[] :: * -&gt; *
+Prelude :k [] Int
+[] Int :: *
+Prelude&gt; :k [Int]  -- special syntax for [] Int
+[Int] :: *
+Prelude&gt; :k Tree
+Tree :: * -&gt; *</code></pre>
+<p>Bagaimana dengan konstruktor tipe dengan <em>kind</em> lainnya? Bagaimana dengan <code>JoinList</code> dari tugas 7?</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">data</span> <span class="dt">JoinList</span> m a <span class="fu">=</span> <span class="dt">Empty</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">                  <span class="fu">|</span> <span class="dt">Single</span> m a</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">                  <span class="fu">|</span> <span class="dt">Append</span> m (<span class="dt">JoinList</span> m a) (<span class="dt">JoinList</span> m a)</a></code></pre></div>
+<pre><code>Prelude&gt; :k JoinList
+JoinList :: * -&gt; * -&gt; *</code></pre>
+<p>Masuk akal. <code>JoinList</code> menerima <em>dua</em> tipe sebagai parameter dan memberikan sebuah tipe baru. Tentunya, <code>JoinList</code> <em>curried</em>, jadi kita juga bisa menganggapnya menerima sebuah tipe dan menghasilkan sesuatu dengan <em>kind</em> <code>* -&gt; *</code>. Berikut satu contoh lagi:</p>
+<pre><code>Prelude&gt; :k (-&gt;)
+(-&gt;) :: * -&gt; * -&gt; *</code></pre>
+<p>Konstruktor tipe fungsi menerima dua tipe sebagai argumen. Seperti operator kita bisa menggunakannya <em>infix</em>:</p>
+<pre><code>Prelude&gt; :k Int -&gt; Char
+Int -&gt; Char :: *</code></pre>
+<p>Bisa juga tidak:</p>
+<pre><code>Prelude&gt; :k (-&gt;) Int Char
+(-&gt;) Int Char :: *</code></pre>
+<p>OK, bagaimana dengan ini?</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Funny</span> f a <span class="fu">=</span> <span class="dt">Funny</span> a (f a)</a></code></pre></div>
+<pre><code>Prelude&gt; :k Funny
+Funny :: (* -&gt; *) -&gt; * -&gt; *</code></pre>
+<p><code>Funny</code> menerima dua argumen, yang pertama tipe dengan <em>kind</em> <code>* -&gt; *</code>, dan yang kedua tipe dengan <em>kind</em> <code>*</code>, dan menghasilkan sebuah tipe. Bagaimana GHCi tahu apa <em>kind</em> dari <code>Funny</code>? Dia bisa melakukan <em>kind inference</em>, serupa dengan <em>type inference</em>. <code>Funny</code> adalah sebuah konstruktor tipe <em>higher-order</em>, serupa dengan <code>map</code> yang merupakan sebuah fungsi <em>higher-order</em>. Perhatikan bahwa tipe juga bisa diterapkan sebagian (<em>partially applied</em>) seperti fungsi:</p>
+<pre><code>Prelude&gt; :k Funny Maybe
+Funny Maybe :: * -&gt; *
+Prelude&gt; :k Funny Maybe Int
+Funny Maybe Int :: *</code></pre>
+<h2 id="functor-1"><em>Functor</em></h2>
+<p>Inti dari pola pemetaan yang kita lihat adalah fungsi <em>higher-order</em> yang bertipe seperti</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">thingMap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</a></code></pre></div>
+<p>di mana <code>f</code> ialah variabel tipe yang mewakili tipe dengan <em>kind</em> <code>* -&gt; *</code>. Jadi, bisakah kita menulis fungsi bertipe demikian untuk semuanya?</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">thingMap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">thingMap h fa <span class="fu">=</span> <span class="fu">???</span></a></code></pre></div>
+<p>Tidak juga. Tidak banyak yang bisa kita lakukan jika kita tidak tahu apa <code>f</code> tersebut. <code>thingMap</code> harus bekerja secara berbeda untuk tiap <code>f</code> apapun. Solusinya adalah dengan membuat <em>type class</em>, yang secara tradisi disebut <code>Functor</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Functor</span> f <span class="kw">where</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="ot">  fmap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</a></code></pre></div>
+<p><em>Catatan</em>: <code>Functor</code> didefinisikan di <em>Prelude</em>. Perhatikan bahwa nama “<em>functor</em>” berasal dari <em>category theory</em>, dan <em>tidak sama</em> dengan functors di C++ (yang merupakan fungsi <em>first-class</em>).</p>
+<p>Sekarang kita bisa implemen <em>type class</em> tersebut secara spesifik untuk tiap <code>f</code>. Perhatikan bahwa <code>Functor</code> melakukan abstraksi terhadap tipe dengan <em>kind</em> <code>* -&gt; *</code>. Jadi mustahil untuk menulis</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Int</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">  fmap <span class="fu">=</span> <span class="fu">...</span></a></code></pre></div>
+<p>Jika kita coba, kita akan mendapatkan <em>kind mismatch error</em>:</p>
+<pre><code>[1 of 1] Compiling Main             ( 09-functors.lhs, interpreted )
+
+09-functors.lhs:145:19:
+    Kind mis-match
+    The first argument of `Functor' should have kind `* -&gt; *',
+    but `Int' has kind `*'
+    In the instance declaration for `Functor Int'</code></pre>
+<p>Jika kita sudah memahami <em>kind</em>, pesan di atas cukup jelas.</p>
+<p>Cukup beralasan untuk menjadikan <code>Maybe</code> sebagai anggota dari <code>Functor</code>. Mari kita lakukan. Dengan mengikuti tipe, ini menjadi sangat mudah:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Maybe</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb19-2" data-line-number="2">  fmap _ <span class="dt">Nothing</span>  <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb19-3" data-line-number="3">  fmap h (<span class="dt">Just</span> a) <span class="fu">=</span> <span class="dt">Just</span> (h a)</a></code></pre></div>
+<p>Bagaimana dengan list?</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> [] <span class="kw">where</span></a>
+<a class="sourceLine" id="cb20-2" data-line-number="2">  fmap _ []     <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb20-3" data-line-number="3">  fmap f (x<span class="fu">:</span>xs) <span class="fu">=</span> f x <span class="fu">:</span> fmap f xs</a>
+<a class="sourceLine" id="cb20-4" data-line-number="4">  <span class="co">-- or just</span></a>
+<a class="sourceLine" id="cb20-5" data-line-number="5">  <span class="co">-- fmap = map</span></a></code></pre></div>
+<p>Gampang! Bagaimana dengan <code>IO</code>? Bisakah menjadikan <code>IO</code> sebagai anggota <code>Functor</code>?</p>
+<p>Tentu. <code>fmap :: (a -&gt; b) -&gt; IO a -&gt; IO b</code> menghasilkan sebuah <em>IO</em> yang akan menjalankan aksi <code>IO a</code>, lalu menerapkan fungsi tersebut untuk mengubah hasilnya sebelum dikembalikan. Kita bisa mengimplementasikannya tanpa masalah:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">IO</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb21-2" data-line-number="2">  fmap f ioa <span class="fu">=</span> ioa <span class="fu">&gt;&gt;=</span> (\a <span class="ot">-&gt;</span> return (f a))</a></code></pre></div>
+<p>atau</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">IO</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb22-2" data-line-number="2">  fmap f ioa <span class="fu">=</span> ioa <span class="fu">&gt;&gt;=</span> (return <span class="fu">.</span> f)</a></code></pre></div>
+<p>Sekarang mari kita coba sesuatu yang lebih memutar otak:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> ((<span class="ot">-&gt;</span>) e) <span class="kw">where</span></a></code></pre></div>
+<p>Apa!? Mari kita ikuti tipenya: jika <code>f = (-&gt;) e</code> maka kita ingin agar</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1">fmap<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (<span class="ot">-&gt;</span>) e a <span class="ot">-&gt;</span> (<span class="ot">-&gt;</span>) e b</a></code></pre></div>
+<p>atau, jika <code>(-&gt;)</code> ditulis dalam bentuk infix:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1">fmap<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (e <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (e <span class="ot">-&gt;</span> b)</a></code></pre></div>
+<p>Hmm, tipe <em>signature</em> tersebut terlihat familiar…</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> ((<span class="ot">-&gt;</span>) e) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb26-2" data-line-number="2">  fmap <span class="fu">=</span> (<span class="fu">.</span>)</a></code></pre></div>
+<p>Gila! Apa artinya? Kita bisa mengibaratkan nilai bertipe <code>(e -&gt; a)</code> adalah <em>container</em> berindeks <code>e</code> dengan nilai <code>a</code> untuk tiap nilai <code>e</code>. Pemetaan sebuah fungsi ke tiap nilai di dalam <em>container</em> tersebut sangatlah persis dengan komposisi fungsi. Untuk mengambil elemen dari <em>container</em> hasilnya, kita pertama menerapkan fungsi <code>(e -&gt; a)</code> untuk mendapatkan <code>a</code> dari <em>container</em> asal, lalu menerapkan fungsi <code>(a -&gt; b)</code> untuk mengubah elemen yang didapat.</p>
+<p><!--
+
+Local Variables:
+mode:markdown
+compile-command:"mk pre"
+End:
+
+--></p></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>

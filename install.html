@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: install</title>
+    <link rel="stylesheet" type="text/css" href="./static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="./static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="./"><img src="./static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="./install.html">Instalasi</a>
+        <a href="./lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><p>Sebelum melakukan instalasi bahasa pemrograman Haskell pada komputer Anda, maka Anda dapat terlebih dahulu mencoba bahasa pemrograman Haskell melalui situs resminya <a href="http://haskell.org">disini</a> pada bagian “Try It!”.</p>
+<p>Apaila Anda pada akhirnya ingin memasang Haskell pada komputer Anda, berikut ini adalah beberapa cara yang dapat dilakukan.</p>
+<ul>
+<li><p><a href="#minimal">Instalasi Minimal</a> : Hanya berupa GHC (compiler) dan Cabal (sebuah alat pemasangan dan pembuatan paket) yang terpasang secara global pada sistem Anda, menggunakan manajemen paket sistem anda.</p></li>
+<li><p><a href="#stack">Stack</a> : Memasang perintah “stack” secara global: sebuah alat pembuat program-terpusat untuk mengunduh dan mengelola secara otomatis dependensi Haskell berbasis proyek per proyek.</p></li>
+<li><p><a href="#platform">Haskell Platform</a> : Memasang GHC, Cabal dan beberapa alat lain, berikut dengan kumpulan pustaka pengantar pada lokasi global sistem Anda.</p></li>
+</ul>
+<p>Adanya perbedaan opsi tersebut dikarenakan apa yang secara global terinstall pada sistem Anda begitu pula karena apa yang dikelola dalam lingkungan proyek yang spesifik.</p>
+<p>Bagi pemula, metode yang direkomendasikan untuk instalasi Haskell dan perangkatnya ialah dengan menggunakan <em>Stack</em>.</p>
+<p>Catatan:</p>
+<ul>
+<li>GHC: <a href="https://www.haskell.org/ghc/">Glasgow Haskell Compiler</a></li>
+<li>cabal-install: <em>command-line tool</em> untuk mengurus manajemen paket</li>
+</ul>
+<h2 id="instalasi-minimal">Instalasi Minimal <a name="minimal"></a></h2>
+<p>Instalasi minimal hanya memberikan GHC, Cabal serta Stack saja. Hanya pustaka inti yang dibutuhkan oleh masing-masing platform saja yang diikutsertakan.</p>
+<p>Cabal atau stack harus digunakan untuk mengunduh dan memasang paket setelah proses instalasi selesai.</p>
+<p>Untuk mendapatkan instalasi minimal, silahkan merujuk ke tautan berikut (berbahasa Inggris):</p>
+<ul>
+<li><a href="http://haskell.org/downloads/linux">Linux</a></li>
+<li><a href="https://ghcformacosx.github.io/">OS X</a> (via GHC for Mac OS X)</li>
+<li><a href="https://github.com/fpco/minghc#using-the-installer">Windows</a> (via MinGHC)</li>
+</ul>
+<h2 id="stack">Stack <a name="stack"></a></h2>
+<p>Saat ini, <a href="http://haskellstack.org/">Stack</a> merupakan metode instalasi Haskell yang populer dan mudah. Stack akan mengunduh <em>compiler</em>, membuat kerangka proyek, mengisolasi proyek, dan mengumpulkan Haskell <em>package</em> antar proyek di satu tempat, sehingga tidak perlu <em>compile</em> hal yang sama berulang kali.</p>
+<p>Dengan keuntungan yang sedemikian besar, langkah ekstra yang diperlukan untuk menginstal Stack menjadi tidak berarti.</p>
+<p>Stack akan mengelola seluruh <em>tools</em> yang diperlukan dengan bertindak sebagai <em>front end</em> dari cabal-install.</p>
+<p>Stack tersedia untuk berbagai OS dan linux distro. Jika Anda pengguna linux <em>bleeding edge</em>, Anda tetap bisa mendapatkan <em>binary</em> Stack untuk Linux secara umum.</p>
+<p>Untuk instalasi, silahkan merujuk pada tautan berikut (berbahasa Inggris):</p>
+<ul>
+<li><a href="http://docs.haskellstack.org/en/stable/install_and_upgrade/#ubuntu">Ubuntu Linux</a></li>
+<li><a href="http://docs.haskellstack.org/en/stable/install_and_upgrade/#os-x">OS X</a></li>
+<li><a href="http://docs.haskellstack.org/en/stable/install_and_upgrade/#windows">Windows</a></li>
+</ul>
+<h2 id="haskell-platform">Haskell Platform <a name="platform"></a></h2>
+<p>Haskell platform adalah installer all-in-one yang serba lengkap. Setelah mengunduh, Anda akan memiliki segala sesuatu yang dibutuhkan untuk membangun programs haskell terhadap pustaka yang himpunan inti pada pustaka. Platform ini hadir dalam versi minimal dengan alat kecuali pustaka diluar inti GHC.</p>
+<p>Untuk instalasi, silahkan merujuk pada tautan berikut (berbahasa Inggris):</p>
+<ul>
+<li><a href="http://www.haskell.org/platform/linux.html">Linux</a></li>
+<li><a href="http://www.haskell.org/platform/mac.html">OS X</a></li>
+<li><a href="http://www.haskell.org/platform/windows.html">Windows</a></li>
+</ul>
+<h2 id="contoh-proyek">Contoh Proyek</h2>
+<p>Sebagai contoh, berikut ini adalah instruksi untuk menjalankan situs ini pada mesin lokal Anda dengan menggunakan Stack sebagai alat yang direkomendasikan:</p>
+<ul>
+<li><a href="http://docs.haskellstack.org/en/stable/README.html#how-to-install">install stack</a></li>
+<li>clone repo situs ini (https://github.com/haskell-id/website/)</li>
+<li>masuk ke dalam folder proyek</li>
+<li><code>stack setup</code>. Ini akan mendownload GHC yang sesuai untuk proyek ini.</li>
+<li><code>stack build</code>. Kompilasi proyek.</li>
+</ul>
+<p>Setelah kompilasi, binary dapat ditemukan pada path yang bergantung pada tiap-tiap sistem. Path binary penulis pada saat artikel ini ditulis ialah: <code>/.stack-work/install/x86_64-linux/lts-3.11/7.10.2/bin/site</code>. Stack menyediakan perintah <code>stack exec</code> untuk mengeksekusi binary.</p>
+<p>Untuk situs ini, kita bisa melakukan <code>stack exec site watch</code> untuk menjalankan webserver lokal di mana kita bisa melihat hasil situs di <code>localhost:8000</code>. <em>Long running process</em> ini juga akan mendeteksi jika ada perubahan konten, sehingga kita hanya perlu merefresh browser untuk melihatnya.</p>
+<p>Situs ini menggunakan <a href="https://jaspervdj.be/hakyll/">hakyll</a>, jika ingin tahu lebih banyak, kalian bisa melihat situs dan dokumentasinya.</p></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>

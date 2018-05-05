@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: 10-applicative</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../"><img src="../static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="../install.html">Instalasi</a>
+        <a href="../lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><p><!-- CLASS
+
+> {-# LANGUAGE GeneralizedNewtypeDeriving, NoMonomorphismRestriction #-}
+
+--></p>
+<h1 id="applicative-functor-bagian-i"><em>Applicative Functor</em>, Bagian I</h1>
+<p>Bacaan tambahan:</p>
+<ul>
+<li><a href="http://learnyouahaskell.com/functors-applicative-functors-and-monoids#applicative-functors"><em>Applicative Functors</em></a> dari <em>Learn You a Haskell</em></li>
+<li><a href="http://www.haskell.org/haskellwiki/Typeclassopedia"><em>Typeclassopedia</em></a></li>
+</ul>
+<h2 id="motivasi">Motivasi</h2>
+<p>Perhatikan tipe <code>Employee</code> berikut:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Name</span> <span class="fu">=</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Employee</span> <span class="fu">=</span> <span class="dt">Employee</span> {<span class="ot"> name    ::</span> <span class="dt">Name</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">                         ,<span class="ot"> phone   ::</span> <span class="dt">String</span> }</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">                <span class="kw">deriving</span> <span class="dt">Show</span></a></code></pre></div>
+<p>Tentunya konstruktor <code>Employee</code> bertipe</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="dt">Employee</span><span class="ot"> ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Employee</span></a></code></pre></div>
+<p>Jika kita memiliki sebuah <code>Name</code> dan sebuah <code>String</code>, kita bisa terapkan (<em>apply</em>) konstruktor <code>Employee</code> untuk mendapatkan sebuah <code>Employee</code>.</p>
+<p>Misalkan kita tidak memiliki sebuah <code>Name</code> dan <code>String</code>, melainkan <code>Maybe Name</code> dan <code>Maybe String</code>. Mungkin karena kita mendapatkannya dengan melakukan <em>parsing</em> berkas yang penuh <em>error</em>, atau dari <em>form</em> yang tidak sepenuhnya diisi, atau kasus-kasus lainnya. Mungkin kita tidak bisa membuat <code>Employee</code>, tapi paling tidak kita bisa membuat <code>Maybe Employee</code>.</p>
+<p>Kita akan mengubah fungsi <code>(Name -&gt; String -&gt; Employee)</code> menjadi fungsi <code>(Maybe Name -&gt; Maybe String -&gt; Maybe Employee)</code>. Bisakah kita membuat sesuatu bertipe seperti ini?</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">(<span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Employee</span>) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">(<span class="dt">Maybe</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Employee</span>)</a></code></pre></div>
+<p>Tentu saja bisa. Saya pun yakin kalian sudah bisa membuatnya sambil tidur sekarang. Kita bisa membayangkan bagaiman fungsi tersebut bekerja. Jika salah satu dari <em>name</em> atau string berupa <code>Nothing</code>, kita mendapatkan <code>Nothing</code>. Jika keduanya berupa <code>Just</code>, kita mendapatkan <code>Employee</code> yang dibuat dengan konstruktor <code>Employee</code> (terbungkus dengan <code>Just</code>). Mari kita lanjutkan…</p>
+<p>Sekarang begini: bukannya kita memiliki sebuah <code>Name</code> dan <code>String</code>, namun kita punya <code>[Name]</code> dan <code>[String]</code>. Mungkin kita bisa mendapatkan <code>[Employee]</code> di sini? Sekarang kita mau</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">(<span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Employee</span>) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">([<span class="dt">Name</span>] <span class="ot">-&gt;</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> [<span class="dt">Employee</span>])</a></code></pre></div>
+<p>Kita bisa bayangkan dua cara untuk ini:</p>
+<ul>
+<li>Kita bisa memasangkan satu <code>Name</code> untuk satu <code>String</code> untuk membuat <code>Employee</code></li>
+<li>Kita bisa memasangkan <code>Name</code> dan <code>String</code> dengan segala kombinasi kemungkinannya.</li>
+</ul>
+<p>Atau bagaimana kalau begini: kita punya <code>(e -&gt; Name)</code> dan <code>(e -&gt; String)</code> untuk <code>e</code> apapun. Sebagai contoh, <code>e</code> mungkin sebuah struktur data yang besar dan kita punya fungsi untuk mengekstrak <code>Name</code> dan <code>String</code> darinya. Bisakah kita membuatnya menjadi <code>(e -&gt; Employee)</code>, yang merupakan resep untuk mengekstrak <code>Employee</code> dari struktur tersebut?</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">(<span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Employee</span>) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">((e <span class="ot">-&gt;</span> <span class="dt">Name</span>) <span class="ot">-&gt;</span> (e <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> (e <span class="ot">-&gt;</span> <span class="dt">Employee</span>))</a></code></pre></div>
+<p>Tidak masalah, dan kali ini hanya ada satu cara untuk menulis fungsi tersebut.</p>
+<h2 id="generalisir">Generalisir</h2>
+<p>Setelah melihat kegunaan pola seperti di atas, mari kita sedikit menggeneralisir. Tipe fungsi yang kita inginkan adalah seperti berikut:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">(a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> (f a <span class="ot">-&gt;</span> f b <span class="ot">-&gt;</span> f c)</a></code></pre></div>
+<p>Hmm, terlihat familiar… serupa dengan tipe dari <code>fmap</code>!</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">fmap<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (f a <span class="ot">-&gt;</span> f b)</a></code></pre></div>
+<p>Satu-satunya perbedaan adalah sebuah argumen tambahan. Kita bisa menyebut fungsi baru ini sebagai <code>fmap2</code>, karena menerima sebuah fungsi dengan dua argumen. Mungkin kita bisa menuliskannya dalam bentuk <code>fmap</code>, sehingga kita hanya memerlukan <em>constraint</em> <code>Functor</code> pada <code>f</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">fmap2 ::</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> (f a <span class="ot">-&gt;</span> f b <span class="ot">-&gt;</span> f c)</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">fmap2 h fa fb <span class="fu">=</span> undefined</a></code></pre></div>
+<p>Setelah mencoba, <code>Functor</code> tidak cukup membantu kita untuk membuat <code>fmap2</code>. Apa yang salah? Kita memiliki</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">h  ::</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="ot">fa ::</span> f a</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="ot">fb ::</span> f b</a></code></pre></div>
+<p>Perhatikan bahwa kita bisa menuliskan tipe <code>h</code> sebagai <code>(a -&gt; (b -&gt; c))</code>. Jadi kita memiliki sebuah fungsi yang menerima <code>a</code>, dan sebuah nilai bertipe <code>f a</code>. Kita tinggal “mengangkat” fungsi tersebut melewati <code>f</code> dengan <code>fmap</code> yang akan menghasilkan:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">h         ::</span> a <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> c)</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">fmap<span class="ot"> h    ::</span> f a <span class="ot">-&gt;</span> f (b <span class="ot">-&gt;</span> c)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">fmap h<span class="ot"> fa ::</span> f (b <span class="ot">-&gt;</span> c)</a></code></pre></div>
+<p>Oke, sekarang kita memiliki sesuatu bertipe <code>f (b -&gt; c)</code> dan <code>f b</code>… dan di sinilah kita <em>stuck</em>! <code>fmap</code> tidak bisa membantu lebih jauh. <code>fmap</code> memberikan cara untuk menerapkan fungsi ke nilai-nilai yang berada di dalam konteks <code>Functor</code>, tapi yang kita butuhkan sekarang adalah penerapan fungsi yang juga berada di dalam konteks <code>Functor</code> ke nilai-nilai yang berada di konteks <code>Functor</code>.</p>
+<h2 id="applicative"><em>Applicative</em></h2>
+<p><em>Functor</em> yang memiliki karakter seperti di atas (penerapan fungsi berdasarkan konteks, <em>contextual application</em>) disebut <em>applicative</em>. Kelas <code>Applicative</code> (didefinisikan di [<code>Control.Applicative</code>] (http://haskell.org/ghc/docs/latest/html/libraries/base/Control-Applicative.html)) berpola seperti berikut ini.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Applicative</span> f <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="ot">  pure  ::</span> a <span class="ot">-&gt;</span> f a</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"><span class="ot">  (&lt;*&gt;) ::</span> f (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</a></code></pre></div>
+<p>Operator <code>(&lt;*&gt;)</code> (biasa disebut “ap”, versi singkat dari <em>apply</em>, terjemahan: terap) mewakili prinsip penerapan kontekstual (<em>contextual application</em>). Perhatikan bahwa kelas <code>Applicative</code> mewajibkan anggotanya untuk juga menjadi anggota <code>Functor</code>, sehingga kita selalu bisa menggunakan <code>fmap</code> terhadap anggota <code>Applicative</code>. <code>Applicative</code> juga memiliki <em>method</em> lain bernama <code>pure</code> yang memungkinkan kita untuk memasukkan nilai <code>a</code> ke sebuah <em>container</em>. Untuk saat ini, kita bisa bisa menyebut <code>pure</code> sebagai <code>fmap0</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">pure<span class="ot">  ::</span> a             <span class="ot">-&gt;</span> f a</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">fmap<span class="ot">  ::</span> (a <span class="ot">-&gt;</span> b)      <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="ot">fmap2 ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b <span class="ot">-&gt;</span> f c</a></code></pre></div>
+<p>Setelah kita memiliki <code>(&lt;*&gt;)</code>, kita bisa mengimplemen <code>fmap2</code>, yang disebut <code>liftA2</code> di pustaka standar:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">liftA2 ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b <span class="ot">-&gt;</span> f c</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">liftA2 h fa fb <span class="fu">=</span> (h <span class="ot">`fmap`</span> fa) <span class="fu">&lt;*&gt;</span> fb</a></code></pre></div>
+<p>Bahkan, pola ini cukup umum sehingga <code>Control.Applicative</code> mendefinisikan <code>(&lt;$&gt;)</code> sebagai sinonim untuk <code>fmap</code>,</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">(&lt;$&gt;) ::</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">(<span class="fu">&lt;$&gt;</span>) <span class="fu">=</span> fmap</a></code></pre></div>
+<p>sehingga kita bisa menulis</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1">liftA2 h fa fb <span class="fu">=</span> h <span class="fu">&lt;$&gt;</span> fa <span class="fu">&lt;*&gt;</span> fb</a></code></pre></div>
+<p>Bagaimana dengan <code>liftA3</code>?</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">liftA3 ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> d) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b <span class="ot">-&gt;</span> f c <span class="ot">-&gt;</span> f d</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">liftA3 h fa fb fc <span class="fu">=</span> ((h <span class="fu">&lt;$&gt;</span> fa) <span class="fu">&lt;*&gt;</span> fb) <span class="fu">&lt;*&gt;</span> fc</a></code></pre></div>
+<p>(Perhatikan bahwa prioritas dan sifat asosiatif dari <code>(&lt;$&gt;)</code> dan <code>(&lt;*&gt;)</code> didefinisikan sedemikian rupa sehingga semua tanda kurung di atas menjadi tidak diperlukan.)</p>
+<p>Ringkas! Tidak seperti perpindahan dari <code>fmap</code> ke <code>liftA2</code> (yang membutuhkan generalisasi dari <code>Functor</code> ke <code>Applicative</code>), dari <code>liftA2</code> ke <code>liftA3</code> (dan dari situ ke <code>liftA4</code>, … dan seterusnya) tidak memerlukan usaha tambahan. <code>Applicative</code> sudah cukup.</p>
+<p>Sebenarnya, ketika kita memiliki semua argumen, kita tidak perlu untuk menyebutnya <code>liftA2</code>, <code>liftA3</code>, dan seterusnya. Cukup gunakan pola <code>f &lt;$&gt; x &lt;*&gt; y &lt;*&gt; z &lt;*&gt; ...</code> langsung. (<code>liftA2</code> dan lainnya berguna ketika saat aplikasi parsial.)</p>
+<p>Bagaimana dengan <code>pure</code>? <code>pure</code> digunakan ketika kita ingin menerapkan sebuah fungsi ke beberapa argumen yang berada di dalam konteks <em>functor</em> <code>f</code>, tetapi salah satu argumennya tidak berada di dalam <code>f</code>. Argumen tersebut bisa disebut “<em>pure</em>” (murni). Kita bisa menggunakan <code>pure</code> untuk mengangkat mereka ke <code>f</code> sebelum melakukan penerapan. Sebagai contoh:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">liftX ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> d) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> f c <span class="ot">-&gt;</span> f d</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">liftX h fa b fc <span class="fu">=</span> h <span class="fu">&lt;$&gt;</span> fa <span class="fu">&lt;*&gt;</span> pure b <span class="fu">&lt;*&gt;</span> fc</a></code></pre></div>
+<h2 id="hukum-hukum-applicative">Hukum-hukum <em>applicative</em></h2>
+<p>Hanya ada satu hukum yang benar-benar menarik untuk <code>Applicative</code>:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1">f <span class="ot">`fmap`</span> x <span class="fu">===</span> pure f <span class="fu">&lt;*&gt;</span> x</a></code></pre></div>
+<p>Memetakan sebuah fungsi <code>f</code> pada <em>container</em> <code>x</code> harus memberikan hasil yang sama dengan memasukkan fungsi tersebut ke <em>container</em> lalu menerapkannya ke <code>x</code> dengan <code>(&lt;*&gt;)</code>.</p>
+<p>Ada hukum-hukum lainnya, tetapi mereka tidak begitu instruktif. Kalian bisa membacanya sendiri jika mau.</p>
+<h2 id="contoh-applicative">Contoh <em>applicative</em></h2>
+<p><strong>Maybe</strong></p>
+<p>Mari tulis beberapa anggota dari <code>Applicative</code>, dimulai dengan <code>Maybe</code>. <code>pure</code> bekerja dengan memasukkan sebuah nilai ke bungkus <code>Just</code>. <code>(&lt;*&gt;)</code> adalah aplikasi/ penerapan fungsi dengan kemungkinan gagal, yang akan menghasilkan <code>Nothing</code> jika salah satu dari fungsi atau argumennya berupa <code>Nothing</code>.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">Maybe</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb19-2" data-line-number="2">  pure              <span class="fu">=</span> <span class="dt">Just</span></a>
+<a class="sourceLine" id="cb19-3" data-line-number="3">  <span class="dt">Nothing</span> <span class="fu">&lt;*&gt;</span> _     <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb19-4" data-line-number="4">  _ <span class="fu">&lt;*&gt;</span> <span class="dt">Nothing</span>     <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb19-5" data-line-number="5">  <span class="dt">Just</span> f <span class="fu">&lt;*&gt;</span> <span class="dt">Just</span> x <span class="fu">=</span> <span class="dt">Just</span> (f x)</a></code></pre></div>
+<p>Mari lihat contohnya:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1">m_name1,<span class="ot"> m_name2 ::</span> <span class="dt">Maybe</span> <span class="dt">Name</span></a>
+<a class="sourceLine" id="cb20-2" data-line-number="2">m_name1 <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb20-3" data-line-number="3">m_name2 <span class="fu">=</span> <span class="dt">Just</span> <span class="st">&quot;Brent&quot;</span></a>
+<a class="sourceLine" id="cb20-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb20-5" data-line-number="5">m_phone1,<span class="ot"> m_phone2 ::</span> <span class="dt">Maybe</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb20-6" data-line-number="6">m_phone1 <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb20-7" data-line-number="7">m_phone2 <span class="fu">=</span> <span class="dt">Just</span> <span class="st">&quot;555-1234&quot;</span></a>
+<a class="sourceLine" id="cb20-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb20-9" data-line-number="9">exA <span class="fu">=</span> <span class="dt">Employee</span> <span class="fu">&lt;$&gt;</span> m_name1 <span class="fu">&lt;*&gt;</span> m_phone1</a>
+<a class="sourceLine" id="cb20-10" data-line-number="10">exB <span class="fu">=</span> <span class="dt">Employee</span> <span class="fu">&lt;$&gt;</span> m_name1 <span class="fu">&lt;*&gt;</span> m_phone2</a>
+<a class="sourceLine" id="cb20-11" data-line-number="11">exC <span class="fu">=</span> <span class="dt">Employee</span> <span class="fu">&lt;$&gt;</span> m_name2 <span class="fu">&lt;*&gt;</span> m_phone1</a>
+<a class="sourceLine" id="cb20-12" data-line-number="12">exD <span class="fu">=</span> <span class="dt">Employee</span> <span class="fu">&lt;$&gt;</span> m_name2 <span class="fu">&lt;*&gt;</span> m_phone2</a></code></pre></div>
+<p><!--
+
+Local Variables:
+mode:markdown
+compile-command:"mk pre"
+End:
+
+--></p></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>

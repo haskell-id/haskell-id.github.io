@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: 03-rec-poly</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../"><img src="../static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="../install.html">Instalasi</a>
+        <a href="../lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><!--
+{-# OPTIONS_GHC -Wall #-}
+-->
+<h1 id="pola-rekursi-polimorfisme-dan-prelude">Pola rekursi, polimorfisme, dan <em>Prelude</em></h1>
+<p>Setelah menyelesaikan Tugas 2, kalian pasti banyak menghabiskan waktu menulis fungsi rekursif. Kalian mungkin mengira programer Haskell banyak menghabiskan waktu untuk menulis fungsi rekursif. Sebaliknya, programer Haskell yang berpengalaman sangatlah jarang menulis fungsi rekursif!</p>
+<p>Bagaimana mungkin? Kuncinya adalah menyadari meskipun fungsi rekursif bisa melakukan apapun, pada prakteknya ada beberapa pola umum yang seringkali muncul. Dengan mengabstrak keluar (<em>abstracting out</em>) pola-pola tersebut ke fungsi-fungsi pustaka (<em>library</em>), programer bisa meninggalkan detil <em>low level</em> rekursif ke fungsi-fungsi tersebut, dan fokus ke masalah yang <em>higher level</em>. Itulah tujuan dari <em>wholemeal programming</em>.</p>
+<h2 id="pola-rekursi">Pola rekursi</h2>
+<p>Ingat definisi list yang berisi nilai <code>Int</code> sebelumnya:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">IntList</span> <span class="fu">=</span> <span class="dt">Empty</span> <span class="fu">|</span> <span class="dt">Cons</span> <span class="dt">Int</span> <span class="dt">IntList</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">deriving</span> <span class="dt">Show</span></a></code></pre></div>
+<p>Apa yang kita bisa lakukan terhadap <code>IntList</code>? Berikut ini adalah beberapa kemungkinan:</p>
+<ul>
+<li><p>Lakukan operasi pada tiap elemen di list</p></li>
+<li><p>Buang sebagian elemen, dan simpan sisanya, berdasarkan sebuah tes</p></li>
+<li><p>“Simpulkan” seluruh elemen di list (seperti: cari jumlah total (<em>sum</em>), <em>product</em>, maximum, dan lain-lain).</p></li>
+<li><p>Kalian mungkin masih bisa memberikan contoh lain!</p></li>
+</ul>
+<p><strong><em>Map</em></strong></p>
+<p>Mari kita bahas yang pertama: lakukan operasi pada tiap elemen di list. Sebagai contoh, kita tambahkan satu ke tiap elemen di list.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">addOneToAll ::</span> <span class="dt">IntList</span> <span class="ot">-&gt;</span> <span class="dt">IntList</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">addOneToAll <span class="dt">Empty</span>       <span class="fu">=</span> <span class="dt">Empty</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">addOneToAll (<span class="dt">Cons</span> x xs) <span class="fu">=</span> <span class="dt">Cons</span> (x<span class="fu">+</span><span class="dv">1</span>) (addOneToAll xs)</a></code></pre></div>
+<p>Atau kita bisa memastikan semua elemen di list tidak negatif dengan mengambil nilai mutlak (<em>absolute</em>):</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">absAll ::</span> <span class="dt">IntList</span> <span class="ot">-&gt;</span> <span class="dt">IntList</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">absAll <span class="dt">Empty</span>       <span class="fu">=</span> <span class="dt">Empty</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">absAll (<span class="dt">Cons</span> x xs) <span class="fu">=</span> <span class="dt">Cons</span> (abs x) (absAll xs)</a></code></pre></div>
+<p>Atau kita bisa mengkuadratkan tiap elemen:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">squareAll ::</span> <span class="dt">IntList</span> <span class="ot">-&gt;</span> <span class="dt">IntList</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">squareAll <span class="dt">Empty</span>       <span class="fu">=</span> <span class="dt">Empty</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">squareAll (<span class="dt">Cons</span> x xs) <span class="fu">=</span> <span class="dt">Cons</span> (x<span class="fu">*</span>x) (squareAll xs)</a></code></pre></div>
+<p>Sampai di sini, kalian seharusnya sudah menyadari. Ketiga fungsi tersebut terlihat sangat serupa. Pasti ada cara untuk mengabstraksi keluar kesamaannya sehingga kita tidak perlu mengulang-ulang.</p>
+<p>Ternyata ada caranya. Bisakah kalian menemukannya? Bagian mana yang serupa di ketiga hal tersebut dan mana yang berbeda?</p>
+<p>Yang berbeda tentunya adalah operasi yang ingin kita lakukan pada tiap elemen di list. Kita bisa menyebutnya sebagai fungsi bertipe <code>Int -&gt; Int</code>. Di sini kita bisa melihat betapa berguna untuk bisa memberikan fungsi sebagai input ke fungsi lainnya.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">mapIntList ::</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">IntList</span> <span class="ot">-&gt;</span> <span class="dt">IntList</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">mapIntList _ <span class="dt">Empty</span>       <span class="fu">=</span> <span class="dt">Empty</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">mapIntList f (<span class="dt">Cons</span> x xs) <span class="fu">=</span> <span class="dt">Cons</span> (f x) (mapIntList f xs)</a></code></pre></div>
+<p>Sekarang kita bisa menggunakan <code>mapIntList</code> untuk membuat <code>addOneToAll</code>, <code>absAll</code>, dan <code>squareAll</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">exampleList <span class="fu">=</span> <span class="dt">Cons</span> (<span class="fu">-</span><span class="dv">1</span>) (<span class="dt">Cons</span> <span class="dv">2</span> (<span class="dt">Cons</span> (<span class="fu">-</span><span class="dv">6</span>) <span class="dt">Empty</span>))</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">addOne x <span class="fu">=</span> x <span class="fu">+</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">square x <span class="fu">=</span> x <span class="fu">*</span> x</a></code></pre></div>
+<pre><code>mapIntList addOne exampleList
+mapIntList abs    exampleList
+mapIntList square exampleList</code></pre>
+<p><strong>Filter</strong> (saring)</p>
+<p>Satu pola yang sering muncul ialah ketika kita ingin menyimpan sebagian elemen dari list dan membuang sisanya dengan melakukan sebuah tes. Sebagai contoh, kita ingin menyimpan hanya bilangan positif saja:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">keepOnlyPositive ::</span> <span class="dt">IntList</span> <span class="ot">-&gt;</span> <span class="dt">IntList</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">keepOnlyPositive <span class="dt">Empty</span> <span class="fu">=</span> <span class="dt">Empty</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">keepOnlyPositive (<span class="dt">Cons</span> x xs) </a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  <span class="fu">|</span> x <span class="fu">&gt;</span> <span class="dv">0</span>     <span class="fu">=</span> <span class="dt">Cons</span> x (keepOnlyPositive xs)</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  <span class="fu">|</span> otherwise <span class="fu">=</span> keepOnlyPositive xs</a></code></pre></div>
+<p>Atau hanya bilangan genap:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">keepOnlyEven ::</span> <span class="dt">IntList</span> <span class="ot">-&gt;</span> <span class="dt">IntList</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">keepOnlyEven <span class="dt">Empty</span> <span class="fu">=</span> <span class="dt">Empty</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">keepOnlyEven (<span class="dt">Cons</span> x xs)</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  <span class="fu">|</span> even x    <span class="fu">=</span> <span class="dt">Cons</span> x (keepOnlyEven xs)</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  <span class="fu">|</span> otherwise <span class="fu">=</span> keepOnlyEven xs</a></code></pre></div>
+<p>Bagaimana bisa mengeneralisir pola ini? Mana yang serupa dan mana yang bisa diabstrak keluar?</p>
+<p>Yang bisa diabstrak keluar adalah tes (atau <em>predicate</em>) yang digunakan untuk menentukan apakah nilai tersebut akan disimpan. Sebuah <em>predicate</em> adalah sebuah fungsi bertipe <code>Int -&gt; Bool</code> yang mengembalikan <code>True</code> untuk tiap elemen yang akan disimpan, dan <code>False</code> untuk yang akan dibuang. Jadi, kita bisa menulis <code>filterIntList</code> seperti berikut:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">filterIntList ::</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">IntList</span> <span class="ot">-&gt;</span> <span class="dt">IntList</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">filterIntList _ <span class="dt">Empty</span> <span class="fu">=</span> <span class="dt">Empty</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">filterIntList p (<span class="dt">Cons</span> x xs)</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  <span class="fu">|</span> p x       <span class="fu">=</span> <span class="dt">Cons</span> x (filterIntList p xs)</a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  <span class="fu">|</span> otherwise <span class="fu">=</span> filterIntList p xs</a></code></pre></div>
+<p>–&gt;</p>
+<p><strong><em>Fold</em></strong> (lipat)</p>
+<p>Pola terakhir yang tadi kita singgung adalah “menyimpulkan” atau “merangkum” semua elemen di list. Ini biasa disebut operasi <em>fold</em> atau <em>reduce</em>. Kita akan kembali ke sini minggu depan. Sementara itu, kalian mungkin bisa berpikir bagaimana untuk mengabstrak keluar pola ini.</p>
+<h2 id="polimorfisme-polymorphism">Polimorfisme (<em>Polymorphism</em>)</h2>
+<p>Kita telah menulis beberapa fungsi umum untuk <em>mapping</em> dan <em>filtering</em> (menyaring) list yang berisi <code>Int</code>. Tapi kita belum selesai menggeneralisir! Bagaimana jika kita ingin menyaring list berisi <code>Integer</code>? Atau <code>Bool</code>? Atau list yang berisi list yang berisi <em>tree</em> yang berisi tumpukan <code>String</code>? Kita jadi harus membuat tipe data baru dan fungsi baru untuk tiap kasus. Lebih buruk lagi, kodenya sama persis! Yang berbeda hanyalah notasi tipenya. Bisakah Haskell membantu kita di sini?</p>
+<p>Tentu bisa! Haskell mendukung polimorfisme untuk tipe data dan fungsi. Kata polimorfis berasal dari kata Yunani (πολύμορφος) yang berarti “memiliki banyak bentuk”. Sesuatu yang polimorfis bisa bekerja untuk beberapa tipe.</p>
+<p><strong>Tipe data polimorfis</strong></p>
+<p>Pertama, kita lihat bagaimana mendeklarasikan tipe data polimorfis.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">data</span> <span class="dt">List</span> t <span class="fu">=</span> <span class="dt">E</span> <span class="fu">|</span> <span class="dt">C</span> t (<span class="dt">List</span> t)</a></code></pre></div>
+<p>(Kita tidak bisa menggunakan <code>Empty</code> dan <code>Cons</code> karena kita telah memakainya sebagai konstruktor untuk <code>IntList</code>. Sebagai gantinya kita menggunakan <code>E</code> dan <code>C</code>.)</p>
+<p>Sebelumnya kita memiliki <code>data IntList = ...</code>, sekarang <code>data List t = ...</code>. <code>t</code> merupakan variabel tipe (<em>type variable</em>) yang bisa berarti tipe apapun. Variabel tipe harus dimulai dengan huruf kecil, sedangkan tipe dengan huruf besar. <code>data List t = ...</code> berarti tipe <code>List</code> terparameter (<em>parameterized</em>) berdasarkan tipe, serupa dengan sebuah fungsi yang terparameter berdasarkan input.</p>
+<p>Jika ada tipe <code>t</code>, maka sebuah <code>(List t)</code> terdiri atas konstruktor <code>E</code>, atau konstruktor <code>C</code> bersama nilai bertipe <code>t</code> dan <code>(List t)</code> lainnya. Berikut beberapa contoh:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">lst1 ::</span> <span class="dt">List</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">lst1 <span class="fu">=</span> <span class="dt">C</span> <span class="dv">3</span> (<span class="dt">C</span> <span class="dv">5</span> (<span class="dt">C</span> <span class="dv">2</span> <span class="dt">E</span>))</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="ot">lst2 ::</span> <span class="dt">List</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">lst2 <span class="fu">=</span> <span class="dt">C</span> <span class="ch">'x'</span> (<span class="dt">C</span> <span class="ch">'y'</span> (<span class="dt">C</span> <span class="ch">'z'</span> <span class="dt">E</span>))</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb12-7" data-line-number="7"><span class="ot">lst3 ::</span> <span class="dt">List</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb12-8" data-line-number="8">lst3 <span class="fu">=</span> <span class="dt">C</span> <span class="dt">True</span> (<span class="dt">C</span> <span class="dt">False</span> <span class="dt">E</span>)</a></code></pre></div>
+<p><strong>Fungsi polimorfis</strong></p>
+<p>Sekarang mari menggeneralisir <code>filterIntList</code> supaya bisa bekerja terhadap <code>List</code> yang baru kita buat. Kita bisa mengambil kode <code>filterIntList</code> yang sudah ada dan mengganti <code>Empty</code> dengan <code>E</code> dan <code>Cons</code> dengan <code>C</code>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">filterList _ <span class="dt">E</span> <span class="fu">=</span> <span class="dt">E</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">filterList p (<span class="dt">C</span> x xs)</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  <span class="fu">|</span> p x       <span class="fu">=</span> <span class="dt">C</span> x (filterList p xs)</a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  <span class="fu">|</span> otherwise <span class="fu">=</span> filterList p xs</a></code></pre></div>
+<p>Sekarang, bertipe apakah <code>filterList</code>? Kita lihat tipe apakah yang <code>ghci</code> <em>infer</em> untuknya:</p>
+<pre><code>*Main&gt; :t filterList
+filterList :: (t -&gt; Bool) -&gt; List t -&gt; List t    </code></pre>
+<p>Kita bisa membacanya sebagai: “untuk apapun tipe <code>t</code>, <code>filterList</code> menerima fungsi dari <code>t</code> ke <code>Bool</code> dan list <code>t</code>, dan mengembalikan list <code>t</code>”.</p>
+<p>Bagaimana dengan menggeneralisir <code>mapIntList</code>? Apa tipe yang harus kita berikan ke <code>mapList</code> sehingga bisa mengaplikasikan sebuah fungsi ke tiap elemen di <code>List t</code>?</p>
+<p>Mungkin kita berpikir untuk memberikan tipe</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">mapList ::</span> (t <span class="ot">-&gt;</span> t) <span class="ot">-&gt;</span> <span class="dt">List</span> t <span class="ot">-&gt;</span> <span class="dt">List</span> t</a></code></pre></div>
+<p>Ini bisa, tapi ketika kita mengaplikasikan <code>mapList</code> kita akan selalu mendapatkan list yang elemennya bertipe sama dengan elemen di list yang kita berikan. Hal ini cukup kaku, karena mungkin saja kita ingin melakukan <code>mapList show</code> untuk mengubah list <code>Int</code> menjadi list <code>String</code>. Berikut adalah tipe yang paling umum untuk <code>mapList</code>, berikut implementasinya:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">mapList ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> <span class="dt">List</span> b</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">mapList _ <span class="dt">E</span>        <span class="fu">=</span> <span class="dt">E</span></a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">mapList f (<span class="dt">C</span> x xs) <span class="fu">=</span> <span class="dt">C</span> (f x) (mapList f xs)</a></code></pre></div>
+<p>Satu hal penting yang perlu diingat mengenai fungsi polimorfis ialah <strong>pemanggil fungsi yang menentukan tipe</strong>. Ketika kalian menulis sebuah fungsi polimorfis, fungsi tersebut harus bisa bekerja ke semua tipe. Hal ini –ditambah dengan Haskell yang tidak bisa memutuskan langsung berdasarkan tipe– memiliki implikasi menarik yang akan kita pelajari lebih jauh nanti.</p>
+<h2 id="prelude"><em>Prelude</em></h2>
+<p><code>Prelude</code> adalah sebuah modul berisi definisi fungsi-fungsi standar yang terimpor secara implisit ke tiap program Haskell. [Melihat-lihat dokumentasinya] (https://downloads.haskell.org/~ghc/latest/docs/html/libraries/base-4.8.1.0/Prelude.html) sangatlah dianjurkan untuk mengenal <em>tools</em> yang tersedia di sana.</p>
+<p>Tentu saja list polimorfis terdefinisi di <code>Prelude</code>, beserta [fungsi-fungsi polimorfis untuk list tersebut] (https://downloads.haskell.org/~ghc/latest/docs/html/libraries/base-4.8.1.0/Prelude.html#g:13) Sebagai contoh, <code>filter</code> dan <code>map</code> adalah padanan dari <code>filterList</code> dan <code>mapList</code> yang tadi kita bahas. Bahkan, <a href="https://downloads.haskell.org/~ghc/latest/docs/html/libraries/base-4.8.1.0/Data-List.html">masih banyak fungsi-fungsi untuk list di modul <code>Data.List</code></a>.</p>
+<p>Tipe polimorfis lain yang cukup berguna untuk diketahui ialah <code>Maybe</code>, didefinisikan sebagai</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Maybe</span> a <span class="fu">=</span> <span class="dt">Nothing</span> <span class="fu">|</span> <span class="dt">Just</span> a</a></code></pre></div>
+<p>Sebuah nilai bertipe <code>Maybe a</code> bisa mengandung nilai bertipe <code>a</code> (terbungkus di dalam konstruktor <code>Just</code>), atau berupa <code>Nothing</code> (mewakili kegagalan atau kesalahan). <a href="https://downloads.haskell.org/~ghc/latest/docs/html/libraries/base-4.8.1.0/Data-Maybe.html">Modul <code>Data.Maybe</code> memiliki fungsi-fungsi yang bekerja terhadap nilai bertipe <code>Maybe</code></a>.</p>
+<h2 id="fungsi-total-dan-parsial">Fungsi total dan parsial</h2>
+<p>Perhatikan tipe polimorfis berikut:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1">[a] <span class="ot">-&gt;</span> a</a></code></pre></div>
+<p>Fungsi seperti apa yang bertipe demikian? Tipe di atas menyatakan bahwa jika diberi list apapun yang bertipe <code>a</code>, fungsi tersebut harus mengembalikan sebuah nilai bertipe <code>a</code>. Sebagai contoh, fungsi <code>head</code> di <em>Prelude</em> bertipe seperti ini.</p>
+<p>Apakah yang terjadi jika <code>head</code> diberikan list kosong sebagai input? Mari kita lihat [kode sumber] (https://downloads.haskell.org/~ghc/latest/docs/html/libraries/base-4.8.1.0/src/GHC-List.html#head) dari <code>head</code>…</p>
+<p>Program akan <em>crash</em>! Tak ada lagi yang bisa dilakukan karena program harus bisa bekerja untuk <em>semua</em> tipe. Tak mungkin untuk mengetahui tipe dari elemen yang tidak ada.</p>
+<p><code>head</code> dikenal sebagai <em>fungsi parsial</em>: ada input yang bisa membuat <code>head</code> <em>crash</em>. Fungsi-fungsi yang rekursif tanpa henti pada beberapa input juga disebut parsial. Fungsi yang terdefinisi lengkap pada semua kemungkinan input dikenal dengan nama <em>fungsi total</em>.</p>
+<p>Menghindari fungsi-fungsi parsial sebisa mungkin adalah praktek Haskell yang bagus. Bahkan, menghindari fungsi parsial bisa dibilang praktek yang bagus di bahasa pemrograman apapun – meski sangat sulit di beberapa bahasa. Haskell membuat hal ini mudah dan masuk akal.</p>
+<p><strong><code>head</code> adalah sebuah kesalahan!</strong> Seharusnya itu tidak berada di <code>Prelude</code>. Fungsi-fungsi parsial lainnya di <code>Prelude</code> yang sebaiknya jangan kalian gunakan antara lain <code>tail</code>, <code>init</code>, <code>last</code>, dan <code>(!!)</code>. Sejak sekarang penggunaan salah satu dari fungsi-fungsi tersebut di tugas kuliah akan mengurangi nilai!</p>
+<p>Jadi mesti bagaimana?</p>
+<p><strong>Mengganti fungsi-fungsi parsial</strong></p>
+<p>Kebanyakan fungsi seperti <code>head,</code>tail`, dan lain-lain bisa digantikan dengan pencocokan pola (<em>pattern-matching</em>). Perhatikan definisi berikut:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">doStuff1 ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb19-2" data-line-number="2">doStuff1 []  <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb19-3" data-line-number="3">doStuff1 [_] <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb19-4" data-line-number="4">doStuff1 xs  <span class="fu">=</span> head xs <span class="fu">+</span> (head (tail xs)) </a></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">doStuff2 ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb20-2" data-line-number="2">doStuff2 []        <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb20-3" data-line-number="3">doStuff2 [_]       <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb20-4" data-line-number="4">doStuff2 (x1<span class="fu">:</span>x2<span class="fu">:</span>_) <span class="fu">=</span> x1 <span class="fu">+</span> x2</a></code></pre></div>
+<p>Fungsi-fungsi di atas menghasilkan hasil yang sama, dan keduanya total. Akan tetapi, hanya fungsi kedua yang <em>jelas</em> terlihat total, dan lebih mudah dibaca.</p>
+<p><strong>Menulis fungsi parsial</strong></p>
+<p>Bagaimana jika kalian suatu saat tersadar sedang menulis fungsi parsial? Ada dua pilihan. Yang pertama, ubah tipe hasil fungsi ke tipe yang bisa mengindikasikan kegagalan. Ingat kembali definisi dari <code>Maybe</code>:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Maybe</span> a <span class="fu">=</span> <span class="dt">Nothing</span> <span class="fu">|</span> <span class="dt">Just</span> a</a></code></pre></div>
+<p>Sekarang, andaikan kita sedang membuat <code>head</code>. Kita bisa menulisnya dengan aman seperti ini:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="ot">safeHead ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</a>
+<a class="sourceLine" id="cb22-2" data-line-number="2">safeHead []    <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb22-3" data-line-number="3">safeHead (x<span class="fu">:</span>_) <span class="fu">=</span> <span class="dt">Just</span> x</a></code></pre></div>
+<p>Sebenarnya, fungsi tersebut sudah terdefinisi di paket [<code>safe</code>] (http://hackage.haskell.org/package/safe).</p>
+<p>Mengapa ini ide yang bagus?</p>
+<ol type="1">
+<li><code>safeHead</code> tak akan pernah <em>crash</em>.</li>
+<li>Tipe <code>safeHead</code> memperjelas bahwa fungsi tersebut bisa gagal pada beberapa input.</li>
+<li>Sistem tipe (<em>type system</em>) memastikan pengguna <code>safeHead</code> harus selalu mengecek tipe hasilnya untuk melihat apakah nilai yang didapat atau <code>Nothing</code>.</li>
+</ol>
+<p>Sebenarnya, <code>safeHead</code> masih “parsial”; tapi kita telah mencatat keparsialannya ke sistem tipe sehingga aman. Tujuannya ialah membuat tipe yang ada bisa menjelaskan sifat fungsi sebaik mungkin.</p>
+<p>Oke, tapi bagaimana jika kita tahu kita akan memakai <code>head</code> di mana kita <em>terjamin</em> untuk memiliki list yang tidak kosong? Dalam situasi tersebut, akan sangat mengganggu untuk mendapatkan hasil berupa <code>Maybe a</code> karena kita harus bekerja lebih untuk mengatasi kasus yang kita “tahu” tak akan mungkin terjadi.</p>
+<p>Jawabannya, jika ada kondisi yang <em>terjamin</em>, maka tipe harus merefleksikan jaminan tersebut! Lalu <em>compiler</em> bisa menjamin hal tersebut untuk kalian. Sebagai contoh:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="kw">data</span> <span class="dt">NonEmptyList</span> a <span class="fu">=</span> <span class="dt">NEL</span> a [a]</a>
+<a class="sourceLine" id="cb23-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb23-3" data-line-number="3"><span class="ot">nelToList ::</span> <span class="dt">NonEmptyList</span> a <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb23-4" data-line-number="4">nelToList (<span class="dt">NEL</span> x xs) <span class="fu">=</span> x<span class="fu">:</span>xs</a>
+<a class="sourceLine" id="cb23-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb23-6" data-line-number="6"><span class="ot">listToNel ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">NonEmptyList</span> a)</a>
+<a class="sourceLine" id="cb23-7" data-line-number="7">listToNel []     <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb23-8" data-line-number="8">listToNel (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">NEL</span> x xs</a>
+<a class="sourceLine" id="cb23-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb23-10" data-line-number="10"><span class="ot">headNEL ::</span> <span class="dt">NonEmptyList</span> a <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb23-11" data-line-number="11">headNEL (<span class="dt">NEL</span> a _) <span class="fu">=</span> a</a>
+<a class="sourceLine" id="cb23-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb23-13" data-line-number="13"><span class="ot">tailNEL ::</span> <span class="dt">NonEmptyList</span> a <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb23-14" data-line-number="14">tailNEL (<span class="dt">NEL</span> _ as) <span class="fu">=</span> as</a></code></pre></div>
+<p>Kalian mungkin berpikir melakukan hal seperti ini hanyalah untuk orang bodoh yang bukan jenius seperti kalian. Tentu, <em>kalian</em> tak mungkin membuat kesalahan seperti memberikan list kosong ke fungsi yang mengharapkan list yang tidak kosong. Ya kan? Ada orang bodoh yang terlibat, tapi bukan yang kalian kira.</p></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>

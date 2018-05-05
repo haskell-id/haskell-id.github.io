@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: 08-IO</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../"><img src="../static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="../install.html">Instalasi</a>
+        <a href="../lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><p><!-- CLASS
+
+> {-# OPTIONS_GHC -Wall #-}
+> {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
+--></p>
+<h1 id="io"><em>IO</em></h1>
+<p>Bacaan tambahan:</p>
+<ul>
+<li><a href="http://learnyouahaskell.com/input-and-output"><em>LYAH Chapter 9: Input and Output</em></a></li>
+<li><a href="http://book.realworldhaskell.org/read/io.html"><em>RWH Chapter 7: I/O</em></a></li>
+</ul>
+<h2 id="masalah-dengan-purity">Masalah dengan <em>purity</em></h2>
+<p>Ingat bahwa Haskell bersifat <em>lazy</em> dan juga <em>pure</em>. Ini mengakibatkan dua hal:</p>
+<ol type="1">
+<li><p>Fungsi tidak boleh memiliki efek eksternal. Sebagai contoh, sebuah fungsi tidak bisa mencetak ke layar. Fungsi hanya bisa menghitung hasil.</p></li>
+<li><p>Fungsi tidak boleh bergantung pada hal di luar dirinya. Misalnya, tidak boleh membaca dari <em>keyboard</em>, sistem berkas, atau jaringan. Fungsi hanya boleh bergantung pada inputnya. Dengan kata lain, fungsi harus memberikan hasil yang sama untuk input yang sama setiap saat.</p></li>
+</ol>
+<p>Tapi terkadang kita perlu melakukan hal-hal tersebut di atas! Jika di Haskell kita hanya bisa menulis fungsi untuk dievaluasi di ghci, maka tentu tak akan berguna banyak.</p>
+<p>Di Haskell kita sebenarnya bisa melakukan semua itu, tapi terlihat sangat berbeda jika dibandingkan dengan bahasa pemrograman lain.</p>
+<h2 id="tipe-io">Tipe <code>IO</code></h2>
+<p>Solusi dari masalah di atas ialah tipe khusus bernama <code>IO</code>. Nilai bertipe <code>IO a</code> adalah <em>deskripsi</em> dari komputasi yang memiliki efek. Dengan kata lain, jika dijalankan (mungkin) akan melakukan operasi I/O dan (pada akhirnya) menghasilkan nilai bertipe <code>a</code>. Ada tingkat indireksi di sini yang harus dimengerti. Nilai bertipe <code>IO a</code> <em>dengan sendirinya</em> adalah sesuatu yang <em>tidak aktif</em> tanpa efek samping. Itu hanyalah <em>deskripsi</em> dari sebuah komputasi dengan efek samping. Bisa dibayangkan tipe <code>IO a</code> merupakan sebuah program imperatif <em>first-class</em> di dalam Haskell.</p>
+<p>Sebagai ilustrasi, misalkan kalian memiliki</p>
+<pre><code>c :: Cake</code></pre>
+<p>Apa yang kalian miliki? Tentu <em>cake</em> yang enak. Cukup sederhana.</p>
+<p>Sebaliknya, jika kalian memiliki</p>
+<pre><code>r :: Recipe Cake</code></pre>
+<p>Apa yang kalian punya? <em>Cake</em>? Bukan. Kalian hanya memiliki <em>instruksi</em> (resep) untuk membuat <em>cake</em>, hanya selembar kertas dengan tulisan di atasnya.</p>
+<p>Memiliki resep tak menghasilkan efek apapun. Hanya dengan memegang resep tidak akan menyebabkan <em>oven</em> menjadi panas, tepung berserak di lantai, dan lain sebagainya. Untuk menghasilkan <em>cake</em>, resep tersebut harus diikuti (yang akan menyebabkan tepung berserakan, bahan-bahan tercampur, oven menjadi panas, dsb).</p>
+<p>Sama seperti di atas, nilai bertipe <code>IO a</code> hanyalah sebuah “resep” untuk mendapatkan nilai bertipe <code>a</code> (dan memiliki efek samping). Seperti nilai lainnya, dia bisa diberikan sebagai argumen, dikembalikan sebagai hasil dari fungsi, disimpan di struktur data, atau (yang akan segera kita lihat) digabungkan dengan nilai <code>IO</code> lain menjadi resep yang lebih kompleks.</p>
+<p>Jadi bagaimana nilai bertipe <code>IO a</code> bisa dijalankan? Hanya satu cara: <em>compiler</em> Haskell mencari nilai spesial</p>
+<pre><code>main :: IO ()</code></pre>
+<p>yang akan diberikan ke sistem <em>runtime</em> dan dijalankan. Bayangkan sistem <em>runtime</em> di Haskell sebagai <em>master chef</em>, satu-satunya orang yang diizinkan untuk memasak.</p>
+<p>Jika kalian mau resep kalian juga disertakan maka kalian harus membuatnya menjadi bagian dari resep besar (<code>main</code>) yang diberikan ke <em>master chef</em>. Tentunya <code>main</code> bisa menjadi kompleks, dan biasanya terdiri dari beberapa komputasi <code>IO</code> yang lebih kecil.</p>
+<p>Untuk yang pertama kalinya, mari kita buat program Haskell yang <em>executable</em>! Kita bisa menggunakan fungsi</p>
+<pre><code>putStrLn :: String -&gt; IO ()</code></pre>
+<p>yang jika diberikan sebuah <code>String</code>, akan mengembalikan sebuah komputasi <code>IO</code> yang akan (ketika dijalankan) mencetak <code>String</code> tersebut di layar. Kita cukup menulis ini ke sebuah file bernama <code>Hello.hs</code>:</p>
+<pre><code>main = putStrLn &quot;Hello, Haskell!&quot;</code></pre>
+<p>Mengetikkan <code>runhaskell Hello.hs</code> di <em>command-line prompt</em> menghasilkan pesan kita tercetak di layar! Kita juga bisa menggunakan <code>ghc --make Hello.hs</code> untuk menghasilkan berkas <em>executable</em> bernama <code>Hello</code> (atau <code>Hello.exe</code> di Windows).</p>
+<h2 id="tidak-ada-string-di-dalam-io-string">Tidak ada <code>String</code> “di dalam” <code>IO String</code></h2>
+<p>Banyak pemula di Haskell bertanya-tanya “Saya punya <code>IO String</code>, bagaimana cara mengubahnya menjadi <code>String</code>?”, atau “Bagaimana cara mengeluarkan <code>String</code> dari <code>IO String</code>?”. Dari penjelasan sebelumnya, jelas bahwa pertanyaan-pertanyaan tersebut tidak masuk akal. Tipe <code>IO String</code> merupakan deskripsi komputasi, sebuah resep, untuk menghasilkan <code>String</code>. Tidak ada <code>String</code> di dalam <code>IO String</code>, seperti halnya tidak ada <em>cake</em> di dalam resep <em>cake</em>. Untuk menghasilkan <code>String</code> (atau <em>cake</em> yang lezat), kita perlu menjalankan komputasinya (atau resep). Dan satu-satunya cara untuk melakukannya ialah dengan memberikannya (mungkin sebagai bagian dari <code>IO</code> yang lebih besar) ke sistem <em>runtime</em> Haskell melalui <code>main</code>.</p>
+<h2 id="menggabungkan-io">Menggabungkan <code>IO</code></h2>
+<p>Sudah jelas kalau kita perlu sebuah cara untuk menggabungkan komputasi- komputasi <code>IO</code> menjadi satu komputasi yang lebih besar.</p>
+<p>Cara paling sederhana untuk menggabungkan dua buah komputasi <code>IO</code> ialah dengan menggunakan operator <code>(&gt;&gt;)</code> (dilafalkan “<em>and then</em>”, terjemahan: “lalu” atau “kemudian”) yang bertipe</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">(&gt;&gt;) ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> b <span class="ot">-&gt;</span> <span class="dt">IO</span> b</a></code></pre></div>
+<p><code>(&gt;&gt;)</code> menciptakan sebuah komputasi <code>IO</code> yang terdiri dari menjalankan dua komputasi input secara berurutan. Perhatikan bahwa hasil dari komputasi pertama diabaikan. Kita hanya peduli terhadap efeknya. Sebagai contoh:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">main <span class="fu">=</span> putStrLn <span class="st">&quot;Hello&quot;</span> <span class="fu">&gt;&gt;</span> putStrLn <span class="st">&quot;world!&quot;</span></a></code></pre></div>
+<p>Ini tidak masalah untuk kode berbentuk “do this; do this; do this” di mana hasilnya diabaikan. Akan tetapi ini saja belum cukup. Bagaimana kalau kita tidak ingin mengabaikan hasil dari komputasi pertama?</p>
+<p>Yang pertama kali terpikirkan mungkin dengan memiliki tipe seperti <code>IO a -&gt; IO b -&gt; IO (a,b)</code> akan memecahkan masalah. Ini pun belum cukup. Alasannya, kita ingin komputasi kedua bergantung terhadap hasil komputasi yang pertama. Misalnya kita ingin membaca sebuah integer dari pengguna, lalu mencetak bilangan tersebut ditambah satu. Dalam kasus ini, komputasi kedua (mencetak ke layar) akan berbeda dan bergantung pada hasil dari komputasi pertama.</p>
+<p>Solusinya, dengan operator <code>(&gt;&gt;=)</code> (dilafalkan “<em>bind</em>”) yang bertipe</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">(&gt;&gt;=) ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">IO</span> b) <span class="ot">-&gt;</span> <span class="dt">IO</span> b</a></code></pre></div>
+<p>Ini mungkin akan sulit dimengerti pada awalnya. <code>(&gt;&gt;=)</code> menerima sebuah komputasi yang akan menghasilkan nilai bertipe <code>a</code>, dan sebuah <em>fungsi</em> yang akan melakukan komputasi kedua berdasarkan nilai bertipe <code>a</code> yang tadi dihasilkan. Hasil dari <code>(&gt;&gt;=)</code> adalah (deskripsi dari) sebuah komputasi yang menjalankan komputasi pertama, gunakan hasilnya untuk menentukan komputasi selanjutnya, lalu jalankan komputasi tersebut.</p>
+<p>Sebagai contoh, kita bisa menulis program yang menerima bilangan dari pengguna dan mencetak suksesornya (ditambah 1). Perhatikan penggunaan <code>readLn :: Read a =&gt; IO a</code> yang merupakan komputasi yang membaca input dari pengguna, dan mengubahnya jadi tipe apapun selama merupakan anggota dari <code>Read</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">main <span class="fu">=</span> putStrLn <span class="st">&quot;Please enter a number: &quot;</span> <span class="fu">&gt;&gt;</span> (readLn <span class="fu">&gt;&gt;=</span> (\n <span class="ot">-&gt;</span> putStrLn (show (n<span class="fu">+</span><span class="dv">1</span>))))</a></code></pre></div>
+<p>Tentu ini terlihat jelek. Nantinya kita akan mempelajari cara menulisnya dengan lebih baik.</p>
+<h2 id="sintaks-record">Sintaks <em>record</em></h2>
+<p><em>Materi ini tidak dibahas di kuliah tapi disediakan ekstra untuk mengerjakan tugas 8.</em></p>
+<p>Misalkan kita memiliki tipe data seperti</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">data</span> <span class="dt">D</span> <span class="fu">=</span> <span class="dt">C</span> <span class="dt">T1</span> <span class="dt">T2</span> <span class="dt">T3</span></a></code></pre></div>
+<p>Kita juga bisa mendeklarasi tipe data tersebut dengan sintaks <em>record</em> sebagai berikut:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">data</span> <span class="dt">D</span> <span class="fu">=</span> <span class="dt">C</span> {<span class="ot"> field1 ::</span> <span class="dt">T1</span>,<span class="ot"> field2 ::</span> <span class="dt">T2</span>,<span class="ot"> field3 ::</span> <span class="dt">T3</span> }</a></code></pre></div>
+<p>di mana kita tidak hanya mendeskripsikan tipe tapi juga <em>nama</em> untuk tiap <em>field</em> yang terdapat di konstruktor <code>C</code>. <code>D</code> versi baru ini bisa digunakan sama seperti versi lamanya. Kita bisa membuat konstruksi dan mencocokkan pola terhadap nilai bertipe <code>D</code> seperti <code>C v1 v2 v3</code>. Selain itu, kita juga mendapatkan keuntungan tambahan.</p>
+<ol type="1">
+<li>Tiap nama <em>field</em> secara otomatis merupakan fungsi proyeksi (<em>projection function</em>) yang mendapatkan nilai dari <em>field</em> tersebut di nilai bertipe <code>D</code>. Sebagai contoh, <code>field2</code> ialah sebuah fungsi bertipe</li>
+</ol>
+<pre><code>~~~~ {.haskell}
+field2 :: D -&gt; T2
+~~~~
+
+ Sebelumnya kita harus membuat implementasi `field2` sendiri
+ dengan menuliskan
+
+~~~~ {.haskell}
+field2 (C _ f _) = f
+~~~~
+
+ Ini menghilangkan banyak kode tambahan (*boilerplate*) seandainya
+ kita memiliki tipe data dengan banyak *field*!</code></pre>
+<ol type="1">
+<li><p>Terdapat sintaks khusus untuk <em>membuat</em>, <em>mengubah</em>, and <em>mencocokkan pola</em> untuk nilai bertipe <code>D</code> (selain sintaks biasa).</p>
+<p>Kita bisa membuat <em>membuat</em> sebuah nilai bertipe <code>D</code> menggunakan sintaks seperti</p></li>
+</ol>
+<pre><code>~~~~ {.haskell}
+C { field3 = ..., field1 = ..., field2 = ... }
+~~~~
+
+ dengan `...` diisi dengan ekspresi bertipe tepat. Perhatikan bahwa
+ kita bisa deskripsikan *field*-nya dengan urutan bebas.
+
+ Jika kita memiliki sebuah nilai `d :: D`. Kita bisa *mengubah* `d`
+ menggunakan sintaks seperti
+
+~~~~ {.haskell}
+d { field3 = ... }
+~~~~
+
+ Tentu yang dimaksud &quot;mengubah&quot; di sini bukan *mutating* `d`, tapi
+ membuat nilai baru bertipe `D` yang sama persis seperti `d` kecuali
+ `field3` yang nilainya tergantikan dengan nilai baru.
+
+ Akhirnya, kita bisa *mencocokkan pola* pada nilai bertipe `D` seperti
+ berikut:
+
+~~~~ {.haskell}
+foo (C { field1 = x }) = ... x ...
+~~~~
+
+ Ini hanya mencocokkan *field* `field1` dari nilai bertipe `D`,
+ dengan menyebutnya sebagai `x`, mengabaikan *field* lainnya. (Tentu
+ `x` di sini hanya contoh, kita bisa mencocokkan dengan pola apapun).</code></pre>
+<p><!--
+
+Local Variables:
+mode:markdown
+compile-command:"mk build"
+End:
+
+--></p></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>

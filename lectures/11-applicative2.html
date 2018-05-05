@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: 11-applicative2</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../"><img src="../static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="../install.html">Instalasi</a>
+        <a href="../lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><h1 id="applicative-functor-bagian-ii"><em>Applicative functor</em>, Bagian II</h1>
+<p>Bacaan tambahan:</p>
+<ul>
+<li><a href="http://learnyouahaskell.com/functors-applicative-functors-and-monoids#applicative-functors"><em>Applicative Functor</em></a> di <em>Learn You a Haskell</em></li>
+<li><a href="http://www.haskell.org/haskellwiki/Typeclassopedia"><em>The Typeclassopedia</em></a></li>
+</ul>
+<p>Mari kita perhatikan kembali <em>type class</em> <code>Functor</code> dan <code>Applicative</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Functor</span> f <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">  fmap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">class</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Applicative</span> f <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="ot">  pure  ::</span> a <span class="ot">-&gt;</span> f a</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="ot">  (&lt;*&gt;) ::</span> f (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</a></code></pre></div>
+<p>Tiap <code>Applicative</code> juga merupakan <code>Functor</code>, bisakah kita implemen <code>fmap</code> dalam bentuk <code>pure</code> dan <code>(&lt;*&gt;)</code>? Mari kita coba!</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">fmap g x <span class="fu">=</span> pure g <span class="fu">&lt;*&gt;</span> x</a></code></pre></div>
+<p>Setidaknya, tipenya cocok! Akan tetapi, bukan mustahil untuk membuat anggota <code>Functor</code> and <code>Applicative</code> yang tidak cocok satu sama lain. Karena hal ini menimbulkan keraguan, kita membuat perjanjian bahwa anggota <code>Functor</code> dan <code>Applicative</code> untuk tipe apapun harus cocok satu sama lain.</p>
+<p>Sekarang, mari kita lihat beberapa contoh lain dari anggota <code>Applicative</code>.</p>
+<h2 id="contoh-contoh-applicative-lain">Contoh-contoh <em>Applicative</em> Lain</h2>
+<p><strong>Lists</strong></p>
+<p>Bagaimana list menjadi anggota <code>Applicative</code>? Ada dua kemungkinan: satu yang memasangkan elemen dari list fungsi ke list argumen secara berurutan (“zip”), dan satu lagi yang menggabungkan fungsi dan argumennya dengan seluruh kemungkinan kombinasi.</p>
+<p>Mari kita buat anggota yang melakukan seluruh kombinasi dahulu. (Dengan alasan yang akan diketahui minggu depan, ini merupakan anggota <em>default</em>). Dari sisi ini, list bisa dilihat sebagai hal yang “non-deterministik”: nilai bertipe <code>[a]</code> bisa diibaratkan dengan sebuah nilai dengan beberapa kemungkinan. Jika demikian, maka <code>(&lt;*&gt;)</code> bisa disebut sebagai aplikasi fungsi non-deterministik, yaitu aplikasi sebuah fungi yang non-deterministik ke argumen yang non-deterministik.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Applicative</span> [] <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  pure a        <span class="fu">=</span> [a]          <span class="co">-- a &quot;deterministic&quot; value</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  [] <span class="fu">&lt;*&gt;</span> _      <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  (f<span class="fu">:</span>fs) <span class="fu">&lt;*&gt;</span> as <span class="fu">=</span> (map f as) <span class="fu">++</span> (fs <span class="fu">&lt;*&gt;</span> as)</a></code></pre></div>
+<p>Ini contohnya:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">names  <span class="fu">=</span> [<span class="st">&quot;Joe&quot;</span>, <span class="st">&quot;Sara&quot;</span>, <span class="st">&quot;Mae&quot;</span>]</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">phones <span class="fu">=</span> [<span class="st">&quot;555-5555&quot;</span>, <span class="st">&quot;123-456-7890&quot;</span>, <span class="st">&quot;555-4321&quot;</span>]</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">employees1 <span class="fu">=</span> <span class="dt">Employee</span> <span class="fu">&lt;$&gt;</span> names <span class="fu">&lt;*&gt;</span> phones</a></code></pre></div>
+<p>Mungkin contoh ini tidak masuk akal, tapi tak sulit untuk membayangkan situasi di mana kalian butuh menggabungkan hal dengan semua kemungkinan. Misalnya, aritmatika non-deterministik sebagai berikut:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">(<span class="fu">.+</span>) <span class="fu">=</span> liftA2 (<span class="fu">+</span>)    <span class="co">-- penjumlahan diangkat ke konteks Applicative</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">(<span class="fu">.*</span>) <span class="fu">=</span> liftA2 (<span class="fu">*</span>)    <span class="co">-- juga perkalian</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="co">-- nondeterministic arithmetic</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">n <span class="fu">=</span> ([<span class="dv">4</span>,<span class="dv">5</span>] <span class="fu">.*</span> pure <span class="dv">2</span>) <span class="fu">.+</span> [<span class="dv">6</span>,<span class="dv">1</span>] <span class="co">-- (4 atau 5) dikali 2, plus (6 atau 1)</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"><span class="co">-- aritmatika yang mungkin gagal</span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">m1 <span class="fu">=</span> (<span class="dt">Just</span> <span class="dv">3</span> <span class="fu">.+</span> <span class="dt">Just</span> <span class="dv">5</span>) <span class="fu">.*</span> <span class="dt">Just</span> <span class="dv">8</span></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">m2 <span class="fu">=</span> (<span class="dt">Just</span> <span class="dv">3</span> <span class="fu">.+</span> <span class="dt">Nothing</span>) <span class="fu">.*</span> <span class="dt">Just</span> <span class="dv">8</span></a></code></pre></div>
+<p>Selanjutnya, kita akan menulis anggota yang melakukan pemasangan sesuai urutan. Pertama, kita harus menjawab pertanyaan penting: bagaimana mengatasi list dengan panjang yang berbeda? Hal yang paling masuk akal ialah memotong list yang lebih panjang sehingga sama panjangnya dengan yang lebih pendek, dan membuang elemen yang tidak diperlukan. Tentu saja ada cara lainnya. Mungkin kita bisa memanjangkan list yang lebih pendek dengan menyalin elemen terakhirnya (tapi bagaimana jika salah satu list kosong?). Atau bisa juga memanjangkan list dengan elemen “netral” (tapi tentu kita memerlukan anggota <code>Monoid</code>, atau sebuah argumen “<em>default</em>” tambahan).</p>
+<p>Keputusan ini mendikte bagaimana kita mengimplemen <code>pure</code>, karena kita harus mematuhi hukum berikut</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">pure f <span class="fu">&lt;*&gt;</span> xs <span class="fu">===</span> f <span class="fu">&lt;$&gt;</span> xs</a></code></pre></div>
+<p>Perhatikan bahwa list di sisi kanan sama panjangnya dengan yang di sisi kiri. Satu-satunya cara kita bisa membuat sisi kiri sepanjang itu ialah dengan <code>pure</code> yang menciptakan list <code>f</code> tak berhingga, karena kita tidak tahu <code>xs</code> akan seberapa panjang.</p>
+<p>Kita buat anggota dengan menggunakan pembungkus <code>newtype</code> untuk membedakannya dengan anggota yang lain. Fungsi <code>zipWith</code> yang terdapat di <em>Prelude</em> juga membantu kita.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">ZipList</span> a <span class="fu">=</span> <span class="dt">ZipList</span> {<span class="ot"> getZipList ::</span> [a] }</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Functor</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">ZipList</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  pure <span class="fu">=</span> <span class="dt">ZipList</span> <span class="fu">.</span> repeat</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  <span class="dt">ZipList</span> fs <span class="fu">&lt;*&gt;</span> <span class="dt">ZipList</span> xs <span class="fu">=</span> <span class="dt">ZipList</span> (zipWith (<span class="fu">$</span>) fs xs)</a></code></pre></div>
+<p>Sebagai contoh:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">employees2 <span class="fu">=</span> getZipList <span class="fu">$</span> <span class="dt">Employee</span> <span class="fu">&lt;$&gt;</span> <span class="dt">ZipList</span> names <span class="fu">&lt;*&gt;</span> <span class="dt">ZipList</span> phones</a></code></pre></div>
+<p><strong><em>Reader/environment</em></strong></p>
+<p>Contoh terakhir untuk <code>(-&gt;) e</code>. Ini disebut <em>applicative</em> <em>reader</em> (pembaca) atau <em>environment</em> (lingkungan), karena membuat kita bisa “membaca” dari “lingkungan” <code>e</code>. Implementasi anggota ini tidak begitu sulit kalau kita mengikuti tipe-tipenya:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> ((<span class="ot">-&gt;</span>) e) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  fmap <span class="fu">=</span> (<span class="fu">.</span>)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Applicative</span> ((<span class="ot">-&gt;</span>) e) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  pure <span class="fu">=</span> const</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">  f <span class="fu">&lt;*&gt;</span> x <span class="fu">=</span> \e <span class="ot">-&gt;</span> (f e) (x e)</a></code></pre></div>
+<p>Contoh <code>Employee</code> (pegawai):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">data</span> <span class="dt">BigRecord</span> <span class="fu">=</span> <span class="dt">BR</span> {<span class="ot"> getName         ::</span> <span class="dt">Name</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">                    ,<span class="ot"> getSSN          ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">                    ,<span class="ot"> getSalary       ::</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">                    ,<span class="ot"> getPhone        ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">                    ,<span class="ot"> getLicensePlate ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">                    ,<span class="ot"> getNumSickDays  ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">                    }</a>
+<a class="sourceLine" id="cb10-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb10-9" data-line-number="9">r <span class="fu">=</span> <span class="dt">BR</span> <span class="st">&quot;Brent&quot;</span> <span class="st">&quot;XXX-XX-XXX4&quot;</span> <span class="dv">600000000</span> <span class="st">&quot;555-1234&quot;</span> <span class="st">&quot;JGX-55T3&quot;</span> <span class="dv">2</span></a>
+<a class="sourceLine" id="cb10-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb10-11" data-line-number="11"><span class="ot">getEmp ::</span> <span class="dt">BigRecord</span> <span class="ot">-&gt;</span> <span class="dt">Employee</span></a>
+<a class="sourceLine" id="cb10-12" data-line-number="12">getEmp <span class="fu">=</span> <span class="dt">Employee</span> <span class="fu">&lt;$&gt;</span> getName <span class="fu">&lt;*&gt;</span> getPhone</a>
+<a class="sourceLine" id="cb10-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb10-14" data-line-number="14">exQ <span class="fu">=</span> getEmp r</a></code></pre></div>
+<h2 id="tingkat-abstraksi">Tingkat Abstraksi</h2>
+<p><code>Functor</code> cukup berguna dan jelas. Pada awalnya, sepertinya <code>Applicative</code> tidak begitu membawa perubahan berarti dari apa yang telah dimiliki <code>Functor</code>. Akan tetapi, perubahan kecil ini memiliki efek yang besar. <code>Applicative</code> (dan yang akan kita lihat minggu depan, <code>Monad</code>) bisa disebut sebagai “model komputasi”, sementara <code>Functor</code> tidak demikian.</p>
+<p>Ketika bekerja dengan <code>Applicative</code> dan <code>Monad</code>, perlu selalu diingat bahwa ada beberapa tingkat abstraksi. Kasarnya, abstraksi ialah sesuatu yang menyembunyikan detil tingkat di bawahnya dan menyediakan antarmuka yang bisa digunakan (idealnya) tanpa memikirkan tingkat di bawahnya tersebut, meski terkadang ada detil dari tingkat bawah yang “bocor” di beberapa kasus. Ide tentang beberapa tingkat abstraksi ini banyak digunakan. Contohnya, program—OS—kernel—sirkuit terpadu (IC)—gerbang logika—<em>silicon</em>, atau HTTP—TCP—IP—Ethernet, atau bahasa pemrograman—<em>bytecode</em>— <em>assembly</em>—kode mesin.</p>
+<p>Haskell memberi kita alat untuk membuat beberapa tingkat abstraksi <em>di dalam program Haskell sendiri</em>. Dengan kata lain, kita bisa meng-<em>extend</em> tingkat abstraksi dari bahasa pemrograman ke atas. Hal ini sangat kuat dan berguna tapi juga bisa membingungkan. Kita harus belajar berpikir di beberapa tingkat secara eksplisit, dan berpindah-pindah di antara tingkat-tingkat tersebut.</p>
+<p>Dalam <code>Applicative</code> dan <code>Monad</code>, terdapat dua tingkatan untuk dipahami. Pertama ialah tingkat di mana implementasi anggota <code>Applicative</code> dan <code>Monad</code>. Kalian mendapatkan pengalaman di tingkat ini di tugas sebelumnya, ketika membuat <code>Parser</code> menjadi anggota <code>Applicative</code>.</p>
+<p>Ketika <code>Parser</code> sudah menjadi angota <code>Applicative</code>, berikutnya kita “naik satu tingkat” dan membuat program dengan <code>Parser</code> melalui antarmuka <code>Applicative</code>, tanpa memikirkan bagaimana <code>Parser</code> dan implementasi anggota <code>Applicative</code>nya dibuat. Kalian mendapatkan pengalaman ini di tugas minggu lalu, dan akan mendapatkannya lagi minggu ini. Pemrograman di tingkat ini memiliki “rasa” yang berbeda dengan pengerjaan detil anggota. Mari kita lihat beberapa contoh.</p>
+<h2 id="applicative-api"><em>Applicative</em> API</h2>
+<p>Salah satu keuntungan memiliki antarmuka seragam seperti <code>Applicative</code> ialah kita bisa menulis perkakas umum dan struktur kontrol yang bisa bekerja dengan <em>semua</em> anggota <code>Applicative</code>. Sebagai contoh, mari kita tulis</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">pair ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> f b <span class="ot">-&gt;</span> f (a,b)</a></code></pre></div>
+<p><code>pair</code> menerima dua nilai dan memasangkannya. Semua hal tersebut dilakukan dalam konteks <code>Applicative f</code>. Percobaan pertama, ambil fungsi untuk memasangkan, dan “angkat” melewati argumennya dengan menggunakan <code>(&lt;$&gt;)</code> dan <code>(&lt;*&gt;)</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">pair fa fb <span class="fu">=</span> (\x y <span class="ot">-&gt;</span> (x,y)) <span class="fu">&lt;$&gt;</span> fa <span class="fu">&lt;*&gt;</span> fb</a></code></pre></div>
+<p>Ini sudah berfungsi, tapi masih bisa disederhanakan. Ingat di Haskell kita bisa menggunakan sintaks untuk melambangkan konstruktor <em>pair</em>, jadi kita bisa menuliskan</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">pair fa fb <span class="fu">=</span> (,) <span class="fu">&lt;$&gt;</span> fa <span class="fu">&lt;*&gt;</span> fb</a></code></pre></div>
+<p>Sebenarnya kita sudah melihat pola ini sebelumnya. Ini adalah pola <code>liftA2</code> yang membuat kita mulai belajar <code>Applicative</code>. Kita bisa menyederhanakannya lebih jauh dengan</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">pair fa fb <span class="fu">=</span> liftA2 (,) fa fb</a></code></pre></div>
+<p>Sekarang kita tidak perlu menuliskan argumen fungsi secara eksplisit, sehingga kita bisa memperoleh versi final dari fungsi ini:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1">pair <span class="fu">=</span> liftA2 (,)</a></code></pre></div>
+<p>Jadi, apa yang fungsi ini lakukan? Tergantung dari <code>f</code> yang diberikan. Mari kita lihat beberapa contoh kasus:</p>
+<ul>
+<li><code>f = Maybe</code>: menghasilkan <code>Nothing</code> jika salah satu argumen berupa <code>Nothing</code>. Jika keduanya <code>Just</code>, hasilnya berupa <code>Just</code> dari pasangan tersebut.</li>
+<li><code>f = []</code>: menghasilkan produk Cartesian dari dua buah list.</li>
+<li><code>f = ZipList</code>: sama dengan fungsi <code>zip</code> standar.</li>
+<li><code>f = IO</code>: menjalankan dua <code>IO</code> berurutan, mengembalikan pasangan hasilnya.</li>
+<li><code>f = Parser</code>: menjalankan dua parser berurutan (parser-parser tersebut menerima input berurutan), mengembalikan hasil berupa pasangan. Jika satu gagal, semuanya gagal.</li>
+</ul>
+<p>Bisakah kalian mengimplemen fungsi-fungsi berikut? Pertimbangkan apa yang tiap fungsi lakukan jika <code>f</code> diganti dengan tipe-tipe di atas.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">(*&gt;)       ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> f b <span class="ot">-&gt;</span> f b</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="ot">mapA       ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> f b) <span class="ot">-&gt;</span> ([a] <span class="ot">-&gt;</span> f [b])</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">sequenceA<span class="ot">  ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> [f a] <span class="ot">-&gt;</span> f [a]</a>
+<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="ot">replicateA ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f [a]</a></code></pre></div>
+<p><!--
+
+Local Variables:
+mode:markdown
+compile-command:"mk pre"
+End:
+
+--></p></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: 07-folds-monoids</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../"><img src="../static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="../install.html">Instalasi</a>
+        <a href="../lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><p><!-- CLASS
+ 
+> {-# OPTIONS_GHC -Wall #-}
+> {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
+--></p>
+<h1 id="folds-and-monoids">Folds and monoids</h1>
+<p>Bacaan tambahan:</p>
+<ul>
+<li><em>Learn You a Haskell</em>, <a href="http://learnyouahaskell.com/higher-order-functions#folds"><em>Only folds and horses</em></a></li>
+<li><em>Learn You a Haskell</em>, <a href="http://learnyouahaskell.com/functors-applicative-functors-and-monoids#monoids"><em>Monoids</em></a></li>
+<li><a href="http://haskell.org/haskellwiki/Fold"><em>Fold</em></a> dari wiki Haskell</li>
+<li><a href="http://apfelmus.nfshost.com/articles/monoid-fingertree.html"><em>Monoids and Finger Trees</em></a>, Heinrich Apfelmus</li>
+<li><a href="http://blog.sigfpe.com/2009/01/haskell-monoids-and-their-uses.html"><em>Haskell Monoids and their Uses</em></a>, Dan Piponi</li>
+<li><a href="http://haskell.org/ghc/docs/latest/html/libraries/base/Data-Monoid.html">Dokumentasi Data.Monoid</a></li>
+<li><a href="http://haskell.org/ghc/docs/latest/html/libraries/base/Data-Foldable.html">Dokumentasi Data.Foldable</a></li>
+</ul>
+<h2 id="fold-lagi"><em>Fold</em> lagi</h2>
+<p>Kita telah melihat bagaimana mendefinisikan fungsi <em>fold</em> untuk list, tapi kita masi bisa membuatnya lebih umum sehingga bisa digunakan untuk tipe data lainnya.</p>
+<p>Perhatikan tipe data <em>binary tree</em> berikut, yang menyimpan data di dalam <em>node</em> internal:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Tree</span> a <span class="fu">=</span> <span class="dt">Empty</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">            <span class="fu">|</span> <span class="dt">Node</span> (<span class="dt">Tree</span> a) a (<span class="dt">Tree</span> a)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="ot">leaf ::</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> a</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">leaf x <span class="fu">=</span> <span class="dt">Node</span> <span class="dt">Empty</span> x <span class="dt">Empty</span></a></code></pre></div>
+<p>Mari kita buat sebuah fungsi untuk menghitung besarnya <em>tree</em> tersebut (banyaknya <em>node</em>):</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">treeSize ::</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">treeSize <span class="dt">Empty</span>        <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">treeSize (<span class="dt">Node</span> l _ r) <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> treeSize l <span class="fu">+</span> treeSize r</a></code></pre></div>
+<p>Bagaimana dengan jumlah keseluruhan data dalam <em>tree</em> yang berisikan <code>Integer</code>?</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">treeSum ::</span> <span class="dt">Tree</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">treeSum <span class="dt">Empty</span>     <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">treeSum (<span class="dt">Node</span> l x r)  <span class="fu">=</span> x <span class="fu">+</span> treeSum l <span class="fu">+</span> treeSum r</a></code></pre></div>
+<p>Atau kedalaman sebuah <em>tree</em>?</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">treeDepth ::</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">treeDepth <span class="dt">Empty</span>        <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">treeDepth (<span class="dt">Node</span> l _ r) <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> max (treeDepth l) (treeDepth r)</a></code></pre></div>
+<p>Atau meratakan semua elemen di <em>tree</em> menjadi sebuah list?</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">flatten ::</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">flatten <span class="dt">Empty</span>        <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">flatten (<span class="dt">Node</span> l x r) <span class="fu">=</span> flatten l <span class="fu">++</span> [x] <span class="fu">++</span> flatten r</a></code></pre></div>
+<p>Dapatkah kalian melihat polanya? Tiap fungsi di atas:</p>
+<ol type="1">
+<li>menerima sebuah <code>Tree</code> sebagai input</li>
+<li>cocokkan pola pada <code>Tree</code> tersebut</li>
+<li>jika <code>Empty</code>, berikan hasil sederhana</li>
+<li>jika berisi <code>Node</code>:
+<ol type="1">
+<li>panggil dirinya sendiri secara rekursif di kedua <em>subtree</em></li>
+<li>gabungkan hasil dari rekursif tersebut dengan data <code>x</code> untuk mendapatkan hasil akhir</li>
+</ol></li>
+</ol>
+<p>Sebagai programer yang baik, kita harus selalu berjuang mengabstraksikan pola yang berulang. Mari kita generalisasi. Kita perlu menjadikan bagian-bagian dari contoh diatas sebagai parameter, yang berbeda dari contoh satu ke lainnya:</p>
+<ol type="1">
+<li>Tipe hasil</li>
+<li>Jawaban untuk kasus <code>Empty</code></li>
+<li>Cara untuk menggabungkan pemanggilan rekursifnya</li>
+</ol>
+<p>Kita sebut tipe data yang terkandung di dalam <em>tree</em> sebagai <code>a</code>, dan tipe hasilnya sebagai <code>b</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">treeFold ::</span> b <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> b</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">treeFold e _ <span class="dt">Empty</span>        <span class="fu">=</span> e</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">treeFold e f (<span class="dt">Node</span> l x r) <span class="fu">=</span> f (treeFold e f l) x (treeFold e f r)</a></code></pre></div>
+<p>Sekarang kita bisa mendefinisikan <code>treeSize</code>, <code>treeSum</code> dan contoh lainnya dengan lebih sederhana. Mari kita lihat:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">treeSize' ::</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">treeSize' <span class="fu">=</span> treeFold <span class="dv">0</span> (\l _ r <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> l <span class="fu">+</span> r)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="ot">treeSum' ::</span> <span class="dt">Tree</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">treeSum' <span class="fu">=</span> treeFold <span class="dv">0</span> (\l x r <span class="ot">-&gt;</span> l <span class="fu">+</span> x <span class="fu">+</span> r)</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7"><span class="ot">treeDepth' ::</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">treeDepth' <span class="fu">=</span> treeFold <span class="dv">0</span> (\l _ r <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> max l r)</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb7-10" data-line-number="10"><span class="ot">flatten' ::</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">flatten' <span class="fu">=</span> treeFold [] (\l x r <span class="ot">-&gt;</span> l <span class="fu">++</span> [x] <span class="fu">++</span> r)</a></code></pre></div>
+<p>Kita juga bisa membuat fungsi <em>fold tree</em> baru dengan mudah:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">treeMax ::</span> (<span class="dt">Ord</span> a, <span class="dt">Bounded</span> a) <span class="ot">=&gt;</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">treeMax <span class="fu">=</span> treeFold minBound (\l x r <span class="ot">-&gt;</span> l <span class="ot">`max`</span> x <span class="ot">`max`</span> r)</a></code></pre></div>
+<p><strong><em>Fold</em> pada ekspresi</strong></p>
+<p>Di mana lagi kita telah melihat <em>fold</em>?</p>
+<p>Ingat tipe <code>ExprT</code> dan fungsi <code>eval</code> dari tugas 5:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">data</span> <span class="dt">ExprT</span> <span class="fu">=</span> <span class="dt">Lit</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">           <span class="fu">|</span> <span class="dt">Add</span> <span class="dt">ExprT</span> <span class="dt">ExprT</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">           <span class="fu">|</span> <span class="dt">Mul</span> <span class="dt">ExprT</span> <span class="dt">ExprT</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5"><span class="ot">eval ::</span> <span class="dt">ExprT</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">eval (<span class="dt">Lit</span> i)     <span class="fu">=</span> i</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">eval (<span class="dt">Add</span> e1 e2) <span class="fu">=</span> eval e1 <span class="fu">+</span> eval e2</a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">eval (<span class="dt">Mul</span> e1 e2) <span class="fu">=</span> eval e1 <span class="fu">*</span> eval e2</a></code></pre></div>
+<p>Hmm… terlihat familiar! Bagaimanakah bentuk <em>fold</em> untuk <code>ExprT</code>?</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">exprTFold ::</span> (<span class="dt">Integer</span> <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">ExprT</span> <span class="ot">-&gt;</span> b</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">exprTFold f _ _ (<span class="dt">Lit</span> i)     <span class="fu">=</span> f i</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">exprTFold f g h (<span class="dt">Add</span> e1 e2) <span class="fu">=</span> g (exprTFold f g h e1) (exprTFold f g h e2)</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">exprTFold f g h (<span class="dt">Mul</span> e1 e2) <span class="fu">=</span> h (exprTFold f g h e1) (exprTFold f g h e2)</a>
+<a class="sourceLine" id="cb10-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6"><span class="ot">eval2 ::</span> <span class="dt">ExprT</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">eval2 <span class="fu">=</span> exprTFold id (<span class="fu">+</span>) (<span class="fu">*</span>)</a></code></pre></div>
+<p>Sekarang kita bisa melakukan hal lain dengan mudah, seperti menghitung jumlah literal dalam sebuah ekspresi:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">numLiterals ::</span> <span class="dt">ExprT</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">numLiterals <span class="fu">=</span> exprTFold (const <span class="dv">1</span>) (<span class="fu">+</span>) (<span class="fu">+</span>)</a></code></pre></div>
+<p><strong><em>Fold</em> secara umum</strong></p>
+<p>Intinya, kita bisa membuat sebuah <em>fold</em> untuk banyak tipe data (meski tidak semua). <em>Fold</em> dari tipe <code>T</code> akan menerima satu (<em>higher-order</em>) argumen untuk tiap konstruktor dari <code>T</code>, dan menjabarkan bagaimana mengubah nilai di dalam konstruktor tersebut menjadi nilai yang bertipe sama dengan tipe hasil akhirnya (dengan asumsi tiap rekursif tehadap <code>T</code> sudah di-<em>fold</em> ke hasil akhir tersebut). Hal ini menyebabkan fungsi-fungsi yang kita akan buat untuk <code>T</code> bisa diekspresikan dalam bentuk <em>fold</em>.</p>
+<h2 id="monoid">Monoid</h2>
+<p>Berikut adalah satu lagi <em>type class</em> yang patut kalian ketahui, yang terdapat di modul <a href="http://haskell.org/ghc/docs/latest/html/libraries/base/Data-Monoid.html"><code>Data.Monoid</code></a>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Monoid</span> m <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="ot">    mempty  ::</span> m</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="ot">    mappend ::</span> m <span class="ot">-&gt;</span> m <span class="ot">-&gt;</span> m</a>
+<a class="sourceLine" id="cb12-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5"><span class="ot">    mconcat ::</span> [m] <span class="ot">-&gt;</span> m</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">    mconcat <span class="fu">=</span> foldr mappend mempty</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb12-8" data-line-number="8"><span class="ot">(&lt;&gt;) ::</span> <span class="dt">Monoid</span> m <span class="ot">=&gt;</span> m <span class="ot">-&gt;</span> m <span class="ot">-&gt;</span> m</a>
+<a class="sourceLine" id="cb12-9" data-line-number="9">(<span class="fu">&lt;&gt;</span>) <span class="fu">=</span> mappend</a></code></pre></div>
+<p><code>(&lt;&gt;)</code> didefinisikan sebagai sinonim untuk <code>mappend</code> (sejak GHC 7.4.1) karena menuliskan <code>mappend</code> cukup merepotkan.</p>
+<p>Tipe yang merupakan anggota dari <code>Monoid</code> memiliki elemen spesialyang disebut <code>mempty</code>, dan sebuah operasi biner <code>mappend</code> (disingkat menjadi <code>(&lt;&gt;)</code>) yang menerima dua nilai dari tipe tersebut dan mengembalikan satu. <code>mempty</code> merupakan identitas untuk <code>&lt;&gt;</code>, dan <code>&lt;&gt;</code> bersifat asosiatif. Dengan kata lain, untuk semua <code>x</code>, <code>y</code>, and <code>z</code>,</p>
+<ol type="1">
+<li><code>mempty &lt;&gt; x == x</code></li>
+<li><code>x &lt;&gt; mempty == x</code></li>
+<li><code>(x &lt;&gt; y) &lt;&gt; z == x &lt;&gt; (y &lt;&gt; z)</code></li>
+</ol>
+<p>Asosiatif berarti kita bisa menulis seperti ini tanpa ambigu:</p>
+<p><code>a &lt;&gt; b &lt;&gt; c &lt;&gt; d &lt;&gt; e</code></p>
+<p>karena kita akan mendapatkan hal yang sama tidak peduli di mana kita meletakkan tanda kurung.</p>
+<p>Ada pula <code>mconcat</code>, yang digunakan untuk menggabungkan nilai-nilaipada sebuah list.</p>
+<p>Secara <em>default</em>, implementasi <code>mconcat</code> menggunakan <code>foldr</code>, tapi dia dimasukkan ke dalam kelas <code>Monoid</code> karena beberapa anggota <code>Monoid</code> mungkin saja memiliki implementasi yang lebih efisien.</p>
+<p>Jika kalian perhatikan, <code>monoid</code> ada di mana-mana. Mari kita buat beberapa anggotanya sebagai latihan (semua ini sudah ada di pustaka bawaan).</p>
+<p>List, dengan <em>concatenation</em>, merupakan sebuah monoid:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Monoid</span> [a] <span class="kw">where</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">  mempty  <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  mappend <span class="fu">=</span> (<span class="fu">++</span>)</a></code></pre></div>
+<p>Bisa dilihat sebelumnya bahwa penjumlahan merupakan monoid pada bilangan bulat (atau bilangan rasional, atau bilangan riil..). Akan tetapi, begitu pula dengan perkalian! Jadi bagaimana? Kita tidak bisa membuat satu tipe menjadi dua anggota yang berbeda dari <em>type class</em> yang sama. Kita akan membuat dua buah <code>newtype</code>, satu untuk tiap anggota <em>type class</em>:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">Sum</span> a <span class="fu">=</span> <span class="dt">Sum</span> a</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Num</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4"><span class="ot">getSum ::</span> <span class="dt">Sum</span> a <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">getSum (<span class="dt">Sum</span> a) <span class="fu">=</span> a</a>
+<a class="sourceLine" id="cb14-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb14-7" data-line-number="7"><span class="kw">instance</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (<span class="dt">Sum</span> a) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-8" data-line-number="8">  mempty  <span class="fu">=</span> <span class="dt">Sum</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">  mappend <span class="fu">=</span> (<span class="fu">+</span>)</a>
+<a class="sourceLine" id="cb14-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb14-11" data-line-number="11"><span class="kw">newtype</span> <span class="dt">Product</span> a <span class="fu">=</span> <span class="dt">Product</span> a</a>
+<a class="sourceLine" id="cb14-12" data-line-number="12">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Num</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb14-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb14-14" data-line-number="14"><span class="ot">getProduct ::</span> <span class="dt">Product</span> a <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb14-15" data-line-number="15">getProduct (<span class="dt">Product</span> a) <span class="fu">=</span> a</a>
+<a class="sourceLine" id="cb14-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb14-17" data-line-number="17"><span class="kw">instance</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (<span class="dt">Product</span> a) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-18" data-line-number="18">  mempty  <span class="fu">=</span> <span class="dt">Product</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb14-19" data-line-number="19">  mappend <span class="fu">=</span> (<span class="fu">*</span>)</a></code></pre></div>
+<p>Perhatikan bahwa misalnya untuk menemukan <em>product</em> dari sebuah list <code>Integer</code> dengan menggunakan <code>mconcat</code>, kita harus mengubahnya dulu menjadi nilai-nilai bertipe <code>Product Integer</code>:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">lst ::</span> [<span class="dt">Integer</span>]</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">lst <span class="fu">=</span> [<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">23</span>,<span class="dv">423</span>,<span class="dv">99</span>]</a>
+<a class="sourceLine" id="cb15-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4"><span class="ot">prod ::</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">prod <span class="fu">=</span> getProduct <span class="fu">.</span> mconcat <span class="fu">.</span> map <span class="dt">Product</span> <span class="fu">$</span> lst</a></code></pre></div>
+<p>(Tentu contoh ini konyol karena kita bisa langsung menggunakan fungsi bawaan <code>product</code>, tapi pola seperti ini bisa berguna nantinya.)</p>
+<p><em>Pair</em> merupakan sebuah monoid selama komponen-komponennya juga monoid:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">instance</span> (<span class="dt">Monoid</span> a, <span class="dt">Monoid</span> b) <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (a,b) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">  mempty <span class="fu">=</span> (mempty, mempty)</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">  (a,b) <span class="ot">`mappend`</span> (c,d) <span class="fu">=</span> (a <span class="ot">`mappend`</span> c, b <span class="ot">`mappend`</span> d)</a></code></pre></div>
+<p>Tantangan: bisakah kalian membuat anggota <code>Monoid</code> untuk <code>Bool</code>? Ada berapa anggota berbeda?</p>
+<p>Tantangan: bagaimana kalian membuat tipe fungsi sebagai anggota <code>Monoid</code>?</p>
+<p><!--
+
+Local Variables:
+mode:markdown
+compile-command:"make explec"
+End:
+
+--></p></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>

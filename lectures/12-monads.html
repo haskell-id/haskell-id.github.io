@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: 12-monads</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../"><img src="../static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="../install.html">Instalasi</a>
+        <a href="../lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><p><!-- CLASS
+
+> import Control.Monad
+> import Control.Applicative
+
+--></p>
+<h1 id="monad">Monad</h1>
+<p>Bacaan tambahan:</p>
+<ul>
+<li><a href="http://www.haskell.org/haskellwiki/Typeclassopedia"><em>Typeclassopedia</em></a></li>
+<li><a href="http://learnyouahaskell.com/a-fistful-of-monads">LYAH Bab 12: <em>A Fistful of Monads</em></a></li>
+<li><a href="http://learnyouahaskell.com/input-and-output">LYAH Bab 9: <em>Input and Output</em></a></li>
+<li><a href="http://book.realworldhaskell.org/read/io.html">RWH Bab 7: <em>I/O</em></a></li>
+<li><a href="http://book.realworldhaskell.org/read/monads.html">RWH Bab 14: <em>Monads</em></a></li>
+<li><a href="http://book.realworldhaskell.org/read/programming-with-monads.html">RWH Bab 15: <em>Programming with monads</em></a></li>
+</ul>
+<h2 id="motivasi">Motivasi</h2>
+<p>Dalam beberapa minggu terakhir, kita telah melihat bagaimana <code>Applicative</code> memungkinkan kita melakukan komputasi di dalam sebuah “konteks khusus”. Contohnya antara lain, mengatasi kemungkinan gagal dengan <code>Maybe</code>, hasil yang lebih dari satu dengan <code>[]</code>, melihat semacam “lingkungan” menggunakan <code>((-&gt;) e)</code>, atau membuat parser dengan pendekatan kombinator seperti di tugas.</p>
+<p>Akan tetapi, sejauh ini kita hanya melihat komputasi dengan struktur tetap, seperti menerapkan konstruktor data ke sejumlah argumen yang telah diketahui. Bagaimana jika kita tidak tahu struktur komputasinya di awal? Bagaimana jika kita ingin memutuskan apa yang ingin dilakukan berdasarkan hasil-hasil sebelumnya?</p>
+<p>Sebagai contoh, ingat tipe <code>Parser</code> dari tugas, dan anggap kita telah menjadikannya anggota <code>Functor</code> dan <code>Applicative</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">Parser</span> a <span class="fu">=</span> <span class="dt">Parser</span> {<span class="ot"> runParser ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a, <span class="dt">String</span>) }</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Parser</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="fu">...</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">Parser</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  <span class="fu">...</span></a></code></pre></div>
+<p>Ingat bahwa nilai bertipe <code>Parser a</code> berarti sebuah parser yang bisa menerima sebuah <code>String</code> sebagai input dan mungkin menghasilkan nilai bertipe <code>a</code> beserta sisa <code>String</code> yang belum di-<em>parse</em>. Sebagai contoh, parser integer yang diberikan input <code>String</code> sebagai berikut</p>
+<pre><code>&quot;143xkkj&quot;</code></pre>
+<p>akan menghasilkan</p>
+<pre><code>Just (143, &quot;xkkj&quot;)</code></pre>
+<p>Seperti yang kalian lihat di tugas, kita sekarang bisa menulis seperti</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Foo</span> <span class="fu">=</span> <span class="dt">Bar</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="ot">parseFoo ::</span> <span class="dt">Parser</span> <span class="dt">Foo</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">parseFoo <span class="fu">=</span> <span class="dt">Bar</span> <span class="fu">&lt;$&gt;</span> parseInt <span class="fu">&lt;*&gt;</span> parseInt <span class="fu">&lt;*&gt;</span> parseChar</a></code></pre></div>
+<p>dengan asumsi kita memiliki fungsi <code>parseInt :: Parser Int</code> dan <code>parseChar :: Parser Char</code>. Anggota <code>Applicative</code> akan mengatasi kemungkinan kegagalan (jika <em>parsing</em> salah satu komponen gagal, <em>parsing</em> seluruh <code>Foo</code> akan gagal). Selain itu, dia juga akan melanjutkan ke bagian <code>String</code> yang belum di-<em>parse</em> untuk dijadikan input ke komponen selanjutnya.</p>
+<p>Nah, sekarang kita akan parsing berkas yang mengandung deret angka sebagai berikut:</p>
+<pre><code>4 78 19 3 44 3 1 7 5 2 3 2</code></pre>
+<p>Dengan catatan, angka pertama menandakan panjang “grup” angka berikutnya. Angka setelah grup tersebut adalah panjang grup berikutnya, dan seterusnya. Jadi contoh di atas bisa dipecah menjadi grup-grup sebagai berikut:</p>
+<pre><code>78 19 3 44   -- grup pertama
+1 7 5        -- grup kedua
+3 2          -- grup ketiga</code></pre>
+<p>Contoh ini memang terlihat aneh, tapi ada kasus nyata di mana format suatu berkas mengikuti prinsip yang sama. Kita membaca semacam “<em>header</em>” yang memberitahu panjang dari suatu blok, atau di mana kita bisa menemukan sesuatu di dalam berkas, dan lain sebagainya.</p>
+<p>Kita ingin menulis parser bertipe</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">parseFile ::</span> <span class="dt">Parser</span> [[<span class="dt">Int</span>]]</a></code></pre></div>
+<p>Sayangnya, ini tidak mungkin dengan <code>Applicative</code>. Masalahnya ialah <code>Applicative</code> tidak memberikan kita cara untuk memutuskan apa yang akan dilakukan berdasarkan hasil sebelumnya. Kita harus memutuskan di awal operasi parsing seperti apa yang kita jalankan sebelum kita bisa melihat hasilnya.</p>
+<p>Akan tetapi, tipe <code>Parser</code> <em>bisa</em> mendukung hal seperti ini. Hal ini diabstraksi dengan <em>type class</em> <code>Monad</code>.</p>
+<h2 id="monad-1">Monad</h2>
+<p><em>Type class</em> <code>Monad</code> didefinisikan sebagai berikut:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Monad</span> m <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="ot">  return ::</span> a <span class="ot">-&gt;</span> m a</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"><span class="ot">  (&gt;&gt;=) ::</span> m a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> m b</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"><span class="ot">  (&gt;&gt;)  ::</span> m a <span class="ot">-&gt;</span> m b <span class="ot">-&gt;</span> m b</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">  m1 <span class="fu">&gt;&gt;</span> m2 <span class="fu">=</span> m1 <span class="fu">&gt;&gt;=</span> \_ <span class="ot">-&gt;</span> m2</a></code></pre></div>
+<p>Terlihat familiar! Kita telah melihat method-method ini di dalam konteks <code>IO</code>, tapi sebenarnya mereka tidak spesifik hanya untuk <code>IO</code> saja.</p>
+<p><code>return</code> juga terlihat familiar karena bertipe sama dengan <code>pure</code>. Sebenarnya, tiap <code>Monad</code> harusnya juga merupakan <code>Applicative</code>, dengan <code>pure = return</code>. Alasan kita mempunyai keduanya ialah <code>Applicative</code> diciptakan <em>setelah</em> <code>Monad</code> ada cukup lama.</p>
+<p><code>(&gt;&gt;)</code> adalah versi khusus dari <code>(&gt;&gt;=)</code> (dimasukkan ke dalam <code>Monad</code> jikalau ada anggota yang ingin menyediakan implementasi yang lebih efisien, meskipun biasanya implementasi <em>default</em> sudah cukup). Jadi untuk memahami <code>(&gt;&gt;)</code>, kita harus memahami <code>(&gt;&gt;=)</code> terlebih dahulu.</p>
+<p>Sebenarnya ada <em>method</em> lagi bernama <code>fail</code>, tapi hal ini adalah sebuah kesalahan. Kalian sebaiknya jangan pernah memakainya, jadi saya tak perlu menjelaskan (kalian <a href="http://www.haskell.org/haskellwiki/Typeclassopedia#do_notation">bisa membacanya di * Typeclassopedia*</a> jika tertarik).</p>
+<p><code>(&gt;&gt;=)</code> (disebut “<em>bind</em>”) adalah di mana semua aksi berada! Mari perhatikan tipenya dengan seksama:</p>
+<pre><code>(&gt;&gt;=) :: m a -&gt; (a -&gt; m b) -&gt; m b</code></pre>
+<p><code>(&gt;&gt;=)</code> menerima dua argumen. Yang pertama ialah nilai bertipe <code>m a</code>. Nilai tersebut biasa disebut “nilai monadik” (<em>monadic values</em>), atau “komputasi”. Ada juga yang menyarankan untuk disebut <em>mobit</em>. Kalian <em>tidak</em> boleh menyebutnya “monad”, karena itu salah (konstruktor tipe <code>m</code> lah yang merupakan monad.) Intinya, mobit bertipe <code>m a</code> melambangkan sebuah komputasi yang menghasilkan sebuah (atau beberapa, atau tidak ada) nilai bertipe <code>a</code>, dan juga memiliki semacam “efek”:</p>
+<ul>
+<li><p><code>c1 :: Maybe a</code> adalah komputasi yang mungkin gagal, atau menghasilkan nilai bertipe <code>a</code> jika sukses.</p></li>
+<li><p><code>c2 :: [a]</code> adalah komputasi yang menghasilkan (beberapa) <code>a</code>.</p></li>
+<li><p><code>c3 :: Parser a</code> adalah komputasi yang mengkonsumsi bagian dari sebuah <code>String</code> dan (mungkin) menghasilkan sebuah <code>a</code>.</p></li>
+<li><p><code>c4 :: IO a</code> adalah komputasi yang mungkin memiliki efek <em>I/O</em> lalu menghasilkan sebuah <code>a</code>.</p></li>
+</ul>
+<p>Dan lain sebagainya. Sekarang, bagaimana dengan argumen kedua dari <code>(&gt;&gt;=)</code>? Sebuah fungsi bertipe <code>(a -&gt; m b)</code> yang akan <em>memilih</em> komputasi berikutnya berdasarkan hasil dari komputasi pertama. Inilah yang dimaksud dengan <code>Monad</code> bisa merangkum beberapa komputasi yang bisa memilih apa yang akan dilakukan tergantung dari hasil komputasi sebelumnya.</p>
+<p>Jadi apa yang <code>(&gt;&gt;=)</code> lakukan ialah menggabungkan dua mobit menjadi satu. Mobit hasilnya yang lebih besar ini akan menjalankan yang pertama lalu yang kedua, dan mengembalikan hasil dari yang kedua. Hal penting yang perlu diingat ialah kita bisa menentukan mobit kedua mana yang akan dijalankan berdasarkan hasil dari yang pertama.</p>
+<p>Implementasi <em>default</em> dari <code>(&gt;&gt;)</code> tentunya menjadi jelas sekarang:</p>
+<pre><code>(&gt;&gt;)  :: m a -&gt; m b -&gt; m b
+m1 &gt;&gt; m2 = m1 &gt;&gt;= \_ -&gt; m2</code></pre>
+<p><code>m1 &gt;&gt; m2</code> menjalankan <code>m1</code> lalu <code>m2</code>, mengabaikan hasil dari <code>m1</code>.</p>
+<h2 id="contoh">Contoh</h2>
+<p>Mari mulai dengan membuat anggota <code>Monad</code> untuk <code>Maybe</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">Maybe</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">  return  <span class="fu">=</span> <span class="dt">Just</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">  <span class="dt">Nothing</span> <span class="fu">&gt;&gt;=</span> _ <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  <span class="dt">Just</span> x  <span class="fu">&gt;&gt;=</span> k <span class="fu">=</span> k x</a></code></pre></div>
+<p><code>return</code>, tentunya, hanyalah <code>Just</code>. Jika argumen pertama dari <code>(&gt;&gt;=)</code> adalah <code>Nothing</code>, maka seluruh komputasi akan gagal. Sebaliknya, jika <code>Just x</code>, kita terapkan argumen kedua pada <code>x</code> untuk memutuskan apa yang akan dilakukan berikutnya.</p>
+<p>Kebetulan, cukup umum memakai huruf <code>k</code> untuk argumen kedua dari <code>(&gt;&gt;=)</code> karena <code>k</code> merupakan singkatan dari “kontinuasi”. <em>I wish I was joking</em>.</p>
+<p>Beberapa contoh:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">check ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">check n <span class="fu">|</span> n <span class="fu">&lt;</span> <span class="dv">10</span>    <span class="fu">=</span> <span class="dt">Just</span> n</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">        <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5"><span class="ot">halve ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb13-6" data-line-number="6">halve n <span class="fu">|</span> even n    <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> n <span class="ot">`div`</span> <span class="dv">2</span></a>
+<a class="sourceLine" id="cb13-7" data-line-number="7">        <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb13-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb13-9" data-line-number="9">exM1 <span class="fu">=</span> return <span class="dv">7</span> <span class="fu">&gt;&gt;=</span> check <span class="fu">&gt;&gt;=</span> halve</a>
+<a class="sourceLine" id="cb13-10" data-line-number="10">exM2 <span class="fu">=</span> return <span class="dv">12</span> <span class="fu">&gt;&gt;=</span> check <span class="fu">&gt;&gt;=</span> halve</a>
+<a class="sourceLine" id="cb13-11" data-line-number="11">exM3 <span class="fu">=</span> return <span class="dv">12</span> <span class="fu">&gt;&gt;=</span> halve <span class="fu">&gt;&gt;=</span> check</a></code></pre></div>
+<p>Bagaimana anggota <code>Monad</code> untuk konstruktor list <code>[]</code>?</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Monad</span> [] <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">  return x <span class="fu">=</span> [x]</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">  xs <span class="fu">&gt;&gt;=</span> k <span class="fu">=</span> concat (map k xs)</a></code></pre></div>
+<p>Contoh sederhana:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">addOneOrTwo ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">addOneOrTwo x <span class="fu">=</span> [x<span class="fu">+</span><span class="dv">1</span>, x<span class="fu">+</span><span class="dv">2</span>]</a>
+<a class="sourceLine" id="cb15-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">exL1 <span class="fu">=</span> [<span class="dv">10</span>,<span class="dv">20</span>,<span class="dv">30</span>] <span class="fu">&gt;&gt;=</span> addOneOrTwo</a></code></pre></div>
+<h2 id="monad-combinator"><em>Monad combinator</em></h2>
+<p>Satu hal bagus dari <code>Monad</code> ialah dengan hanya menggunakan <code>return</code> dan <code>(&gt;&gt;=)</code> kita bisa membuat banyak kombinator umum untuk menulis program dengan monad. Mari kita lihat beberapa contohnya.</p>
+<p>Pertama, <code>sequence</code> menerima list berisi nilai-nilai monadik dan menghasilkan satu nilai monadik yang merupakan gabungan dari semuanya. Artinya, masing-masing monad memiliki sifat yang berbeda. Sebagai contoh, untuk <code>Maybe</code> ini berarti seluruh komputasi sukses hanya jika semua komputasi yang membangunnya sukses. Untuk kasus <code>IO</code>, ini berarti menjalankan komputasi secara berurutan. Untuk kasus <code>Parser</code> ini berarti menjalankan semua parser terhadap bagian-bagian input secara berurutan (dan sukses hanya jika semuanya sukses).</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1">sequence<span class="ot"> ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> [m a] <span class="ot">-&gt;</span> m [a]</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">sequence [] <span class="fu">=</span> return []</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">sequence (ma<span class="fu">:</span>mas) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">  ma <span class="fu">&gt;&gt;=</span> \a <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb16-5" data-line-number="5">  sequence mas <span class="fu">&gt;&gt;=</span> \as <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb16-6" data-line-number="6">  return (a<span class="fu">:</span>as)</a></code></pre></div>
+<p>Dengan menggunakan <code>sequence</code> kita juga bisa menulis kombinator lainnya seperti</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">replicateM ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m a <span class="ot">-&gt;</span> m [a]</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">replicateM n m <span class="fu">=</span> sequence (replicate n m)</a></code></pre></div>
+<p>Dan akhirnya kita bisa menulis parser yang kita inginkan, hanya dengan</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">parseFile ::</span> <span class="dt">Parser</span> [[<span class="dt">Int</span>]]</a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">parseFile <span class="fu">=</span> many parseLine</a>
+<a class="sourceLine" id="cb18-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4"><span class="ot">parseLine ::</span> <span class="dt">Parser</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">parseLine <span class="fu">=</span> parseInt <span class="fu">&gt;&gt;=</span> \i <span class="ot">-&gt;</span> replicateM i parseInt</a></code></pre></div>
+<p>(<code>many</code> juga disebut sebagai <code>zeroOrMore</code> di dalam tugas).</p>
+<p><!--
+
+Local Variables:
+mode:markdown
+compile-command:"make explec"
+End:
+
+--></p></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>

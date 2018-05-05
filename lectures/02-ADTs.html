@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Haskell Indonesia" />
+    <meta name="author" content="kusut" />
+    <title>Haskell-ID :: 02-ADTs</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/default.css" />
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-72989106-1', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="logo">
+        <a href="../"><img src="../static/haskell.png" alt="logo" width="36px" /></a>
+      </div>
+      <div id="menu">
+        <a href="../install.html">Instalasi</a>
+        <a href="../lectures.html">Kuliah</a>
+      </div>
+    </div>    
+    <div id="content">
+      <div class="pandoc"><h1 id="algebraic-data-types"><em>Algebraic data types</em></h1>
+<p>Bacaan tambahan:</p>
+<ul>
+<li><a href="http://book.realworldhaskell.org/"><em>Real World Haskell</em></a>, bab 2 dan 3</li>
+</ul>
+<h2 id="tipe-enumerasi">Tipe Enumerasi</h2>
+<p>Seperti bahasa pemrograman lain, Haskell membolehkan programer membuat tipe enumerasi (<em>enumeration types</em>) sendiri. Contoh sederhana:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Thing</span> <span class="fu">=</span> <span class="dt">Shoe</span> </a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">           <span class="fu">|</span> <span class="dt">Ship</span> </a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">           <span class="fu">|</span> <span class="dt">SealingWax</span> </a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">           <span class="fu">|</span> <span class="dt">Cabbage</span> </a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">           <span class="fu">|</span> <span class="dt">King</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">  <span class="kw">deriving</span> <span class="dt">Show</span></a></code></pre></div>
+<p>Kita mendeklarasikan tipe baru bernama <code>Thing</code> dengan lima konstruktor data (<em>data constructors</em>): <code>Shoe</code>, <code>Ship</code>, dan seterusnya, yang merupakan nilai dari tipe <code>Thing</code>. <code>deriving Show</code> ialah mantra yang memberitahu GHC untuk membuat kode konversi dari <code>Thing</code> ke <code>String</code> secara otomatis. Hal tersebut digunakan ketika <code>ghci</code> mencetak nilai dari ekspresi bertipe <code>Thing</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">shoe ::</span> <span class="dt">Thing</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">shoe <span class="fu">=</span> <span class="dt">Shoe</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="ot">listO'Things ::</span> [<span class="dt">Thing</span>]</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">listO'Things <span class="fu">=</span> [<span class="dt">Shoe</span>, <span class="dt">SealingWax</span>, <span class="dt">King</span>, <span class="dt">Cabbage</span>, <span class="dt">King</span>]</a></code></pre></div>
+<p>Kita bisa menulis fungsi terhadap <code>Thing</code>s dengan pencocokkan pola (<em>pattern-matching</em>).</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">isSmall ::</span> <span class="dt">Thing</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">isSmall <span class="dt">Shoe</span>       <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">isSmall <span class="dt">Ship</span>       <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">isSmall <span class="dt">SealingWax</span> <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">isSmall <span class="dt">Cabbage</span>    <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">isSmall <span class="dt">King</span>       <span class="fu">=</span> <span class="dt">False</span></a></code></pre></div>
+<p>Mengingat klausa fungsi dicoba dari atas ke bawah, kita bisa menyingkat definisi dari <code>isSmall</code> seperti berikut:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">isSmall2 ::</span> <span class="dt">Thing</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">isSmall2 <span class="dt">Ship</span> <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">isSmall2 <span class="dt">King</span> <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">isSmall2 _    <span class="fu">=</span> <span class="dt">True</span></a></code></pre></div>
+<h2 id="lebih-jauh-tentang-enumerasi">Lebih jauh tentang enumerasi</h2>
+<p><code>Thing</code> bertipe enumerasi (<em>enumeration type</em>), mirip dengan yang ada di bahasa lain seperti Java atau C++. Sebenarnya, enumerasi hanyalah kasus spesifik dari sesuatu yang lebih umum di Haskell: tipe data <em>algebraic</em> (<em>algebraic data types</em>). Sebagai contoh tipe data yang bukan sekedar enumerasi, perhatikan definisi dari <code>FailableDouble</code> berikut ini:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">data</span> <span class="dt">FailableDouble</span> <span class="fu">=</span> <span class="dt">Failure</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">                    <span class="fu">|</span> <span class="dt">OK</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="kw">deriving</span> <span class="dt">Show</span></a></code></pre></div>
+<p>Di sini, tipe <code>FailableDouble</code> memiliki dua konstruktor data. Yang pertama, <code>Failure</code>, tidak memerlukan argumen. Jadi <code>Failure</code> itu sendiri ialah nilai yang bertipe <code>FailableDouble</code>. Yang kedua, <code>OK</code>, menerima satu argumen bertipe <code>Double</code>. <code>OK</code> yang berdiri sendiri bukanlah bertipe <code>FailableDouble</code>, kita harus memberinya sebuah <code>Double</code>. Sebagai contoh, <code>OK 3.4</code> ialah nilai bertipe <code>FailableDouble</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">exD1 <span class="fu">=</span> <span class="dt">Failure</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">exD2 <span class="fu">=</span> <span class="dt">OK</span> <span class="fl">3.4</span></a></code></pre></div>
+<p>Coba tebak: <code>OK</code> sendiri bertipe apa?</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">safeDiv ::</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">FailableDouble</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">safeDiv _ <span class="dv">0</span> <span class="fu">=</span> <span class="dt">Failure</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">safeDiv x y <span class="fu">=</span> <span class="dt">OK</span> (x <span class="fu">/</span> y)</a></code></pre></div>
+<p>Pencocokkan pola lagi! Perhatikan pada kasus <code>OK</code>, kita bisa memberi nama kepada <code>Double</code>-nya.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">failureToZero ::</span> <span class="dt">FailableDouble</span> <span class="ot">-&gt;</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">failureToZero <span class="dt">Failure</span> <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">failureToZero (<span class="dt">OK</span> d)  <span class="fu">=</span> d</a></code></pre></div>
+<p>Konstruktor data bisa memiliki lebih dari satu argumen.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- Simpan nama, umur, dan Thing favorit dari seseorang.</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">Person</span> <span class="dt">String</span> <span class="dt">Int</span> <span class="dt">Thing</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="kw">deriving</span> <span class="dt">Show</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5"><span class="ot">brent ::</span> <span class="dt">Person</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">brent <span class="fu">=</span> <span class="dt">Person</span> <span class="st">&quot;Brent&quot;</span> <span class="dv">31</span> <span class="dt">SealingWax</span></a>
+<a class="sourceLine" id="cb9-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="ot">stan ::</span> <span class="dt">Person</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">stan  <span class="fu">=</span> <span class="dt">Person</span> <span class="st">&quot;Stan&quot;</span> <span class="dv">94</span> <span class="dt">Cabbage</span></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"><span class="ot">getAge ::</span> <span class="dt">Person</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12">getAge (<span class="dt">Person</span> _ a _) <span class="fu">=</span> a</a></code></pre></div>
+<p>Perhatikan bahwa konstruktor tipe (<em>type constructor</em>) dan konstruktor data sama-sama bernama <code>Person</code>, tetapi mereka berada di <em>namespace</em> yang berbeda dan merupakan dua hal yang berbeda pula. Konstruktor tipe dan data yang bernama sama ini cukup umum dan akan cukup membingungkan jika belum terbiasa.</p>
+<h2 id="tipe-data-algebraic-secara-umum">Tipe data <em>algebraic</em> secara umum</h2>
+<p>Pada umumnya, sebuah tipe data <em>algebraic</em> memiliki satu atau lebih konstruktor data, dan tiap konstruktor data bisa memiliki nol atau lebih argumen.</p>
+<pre><code>data AlgDataType = Constr1 Type11 Type12
+                 | Constr2 Type21
+                 | Constr3 Type31 Type32 Type33
+                 | Constr4</code></pre>
+<p>Ini menyatakan bahwa nilai dari tipe <code>AlgDataType</code> bisa dibangun dengan empat cara: menggunakan <code>Constr1</code>, <code>Constr2</code>, <code>Constr3</code>, atau <code>Constr4</code>. Tergantung dari konstruktor yang digunakan, nilai <code>AlgDataType</code> bisa mengandung nilai-nilai berbeda. Misalnya, jika dibangun dengan menggunakan <code>Constr1</code> maka nilai tersebut mengandung dua nilai, satu bertipe <code>Type11</code> dan satu lagi bertipe <code>Type12</code>.</p>
+<p>Perlu diingat: nama konstruktor tipe dan konstruktor data harus selalu dimulai dengan huruf besar, sedangkan variabel (termasuk nama fungsi) harus selalu dimulai dengan huruf kecil. Hal ini untuk memudahkan parser Haskell mengetahui mana nama yang merepresentasikan variabel, dan mana yang merepresentasikan konstruktor.</p>
+<h2 id="pencocokkan-pola">Pencocokkan pola</h2>
+<p>Kita sudah melihat pencocokkan pola (<em>pattern-matching</em>) di beberapa kasus. Kali ini kita akan melihat bagaimana pencocokkan pola bekerja secara umum. Pada dasarnya, pencocokkan pola ialah memisahkan nilai berdasarkan konstruktor yang membangunnya. Informasi tersebut bisa digunakan sebagai penentu apa yang harus dilakukan. Ini adalah satu-satunya cara di Haskell.</p>
+<p>Sebagai contoh, untuk menentukan apa yang harus dilakukan dengan nilai bertipe <code>AlgDataType</code> (tipe yang kita buat sebelumnya), kita bisa menulis seperti</p>
+<pre><code>foo (Constr1 a b)   = ...
+foo (Constr2 a)     = ...
+foo (Constr3 a b c) = ...
+foo Constr4         = ...</code></pre>
+<p>Perhatikan kita juga memberikan nama ke nilai-nilai di dalam tiap konstruktor. Perhatikan juga tanda kurung diperlukan untuk pola (<em>patterns</em>) yang terdiri dari lebih dari konstruktor tunggal.</p>
+<p>Itulah ide utama dari pola, tapi ada beberapa hal lain yang perlu diperhatikan.</p>
+<ol type="1">
+<li><p>Sebuah <em>underscore</em> <code>_</code> bisa digunakan sebagai “wildcard pattern” yang cocok dengan apapun.</p></li>
+<li><p>Sebuah pola berbentuk <code>x@pat</code> bisa digunakan untuk mencocokkan nilai dengan pola <code>pat</code>, tapi <em>juga</em> memberikan nama <code>x</code> ke seluruh nilai yang dicocokkan. Sebagai contoh:</p></li>
+</ol>
+<pre><code>&gt; baz :: Person -&gt; String
+&gt; baz p@(Person n _ _) = &quot;The name field of (&quot; ++ show p ++ &quot;) is &quot; ++ n
+
+    *Main&gt; baz brent
+    &quot;The name field of (Person \&quot;Brent\&quot; 31 SealingWax) is Brent&quot;</code></pre>
+<ol type="1">
+<li>Pola bisa bertumpuk (<em>nested</em>). Sebagai contoh:</li>
+</ol>
+<pre><code>&gt; checkFav :: Person -&gt; String
+&gt; checkFav (Person n _ SealingWax) = n ++ &quot;, you're my kind of person!&quot;
+&gt; checkFav (Person n _ _)          = n ++ &quot;, your favorite thing is lame.&quot;
+
+    *Main&gt; checkFav brent
+    &quot;Brent, you're my kind of person!&quot;
+    *Main&gt; checkFav stan
+    &quot;Stan, your favorite thing is lame.&quot;
+
+Perhatikan bagaimana kita menumpuk pola `SealingWax` di dalam pola `Person`.</code></pre>
+<p><em>Grammar</em> berikut mendefinisikan apa yang bisa digunakan sebagai pola:</p>
+<pre><code>pat ::= _
+     |  var
+     |  var @ ( pat )
+     |  ( Constructor pat1 pat2 ... patn )</code></pre>
+<p>Baris pertama menyatakan bahwa <em>underscore</em> adalah sebuah pola (<em>pattern</em>). Baris kedua menyatakan sebuah variabel juga merupakan sebuah pola, yang cocok dengan apapun dan memberikan nama variabel tersebut ke nilai yang dicocokkan. Baris ketiga adalah pola <code>@</code>. Baris terakhir menyatakan bahwa nama konstruktor yang diikuti oleh barisan pola juga merupakan sebuah pola. Pola ini cocok dengan nilai yang dibangun dengan konstruktor tersebut, <em>dan</em> semua dari <code>pat1</code> sampai <code>patn</code> cocok dengan nilai-nilai di dalam konstruktor secara rekursif.</p>
+<p>(Sebenarnya masih banyak yang terkandung di pola <em>grammar</em>, tapi kita tidak perlu sejauh itu.)</p>
+<p>Nilai seperti <code>2</code> atau <code>'c'</code> bisa dibayangkan sebagai konstruktor tanpa argumen. Dengan kata lain, bagaikan tipe <code>Int</code> dan <code>Char</code> didefinisikan seperti</p>
+<pre><code>data Int  = 0 | 1 | -1 | 2 | -2 | ...
+data Char = 'a' | 'b' | 'c' | ...</code></pre>
+<p>yang berarti kita bisa mencocokkan pola dengan nilai literal. (Tentu saja sebenarnya <code>Int</code> dan <code>Char</code> tidak didefinisikan seperti demikian.)</p>
+<h2 id="ekspresi-case">Ekspresi <em>case</em></h2>
+<p>Konstruksi dasar untuk pencocokkan pola di Haskell ialah ekspresi <code>case</code>. Pada umumnya, sebuah ekspresi <code>case</code> berbentuk</p>
+<pre><code>case exp of
+  pat1 -&gt; exp1
+  pat2 -&gt; exp2
+  ...</code></pre>
+<p>Ketika dievaluasi, ekspresi <code>exp</code> dicocokkan dengan tiap pola <code>pat1</code>, <code>pat2</code>, dan seterusnya secara bergantian. Pola yang pertama cocok akan dipilih, dan seluruh ekspresi <code>case</code> akan terevaluasi menjadi ekspresi yang bersesuaian dengan pola yang cocok tersebut. Sebagai contoh,</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1">exCase <span class="fu">=</span> <span class="kw">case</span> <span class="st">&quot;Hello&quot;</span> <span class="kw">of</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">           []      <span class="ot">-&gt;</span> <span class="dv">3</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">           (<span class="ch">'H'</span><span class="fu">:</span>s) <span class="ot">-&gt;</span> length s</a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">           _       <span class="ot">-&gt;</span> <span class="dv">7</span></a></code></pre></div>
+<p>terevaluasi menjadi <code>4</code> (pola kedua yang terpilih, pola ketiga juga cocok tapi tidak terjangkau).</p>
+<p>Sintaks untuk mendefinisikan fungsi yang telah kita lihat sebelumnya hanyalah singkatan untuk mendefinisikan ekspresi <code>case</code>. Sebagai contoh, definisi <code>failureToZero</code> yang telah kita temui sebelumnya bisa ditulis ulang menjadi</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">failureToZero' ::</span> <span class="dt">FailableDouble</span> <span class="ot">-&gt;</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">failureToZero' x <span class="fu">=</span> <span class="kw">case</span> x <span class="kw">of</span></a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">                     <span class="dt">Failure</span> <span class="ot">-&gt;</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">                     <span class="dt">OK</span> d    <span class="ot">-&gt;</span> d</a></code></pre></div>
+<h2 id="tipe-data-rekursif">Tipe data rekursif</h2>
+<p>Tipe data bisa <em>rekursif</em>, yaitu didefinisikan dalam bentuk dirinya sendiri. Kita sudah melihat sebuah tipe rekursif, list. List bisa kosong, atau berisi satu elemen diikuti list sisanya. Kita bisa mendefinisikan list kita sendiri seperti:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">data</span> <span class="dt">IntList</span> <span class="fu">=</span> <span class="dt">Empty</span> <span class="fu">|</span> <span class="dt">Cons</span> <span class="dt">Int</span> <span class="dt">IntList</span></a></code></pre></div>
+<p><em>Built-in</em> list di Haskell cukup serupa. List-list tersebut menggunakan sintaks bawaan, <code>[]</code> dan <code>:</code>. Mereka juga berfungsi pada tipe elemen apapun , bukan hanya <code>Int</code> (akan dibahas lebih jauh di bab berikutnya).</p>
+<p>Kita sering menggunakan fungsi rekursif untuk memproses tipe data rekursif:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">intListProd ::</span> <span class="dt">IntList</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb20-2" data-line-number="2">intListProd <span class="dt">Empty</span>      <span class="fu">=</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb20-3" data-line-number="3">intListProd (<span class="dt">Cons</span> x l) <span class="fu">=</span> x <span class="fu">*</span> intListProd l</a></code></pre></div>
+<p>Contoh lainnya, kita bisa mendefinisikan sebuah tipe pohon biner (<em>binary tree</em>) dengan sebuah nilai <code>Int</code> tersimpan di tiap <em>node</em> internal, dan <code>Char</code> di tiap <em>leaf</em>:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Tree</span> <span class="fu">=</span> <span class="dt">Leaf</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb21-2" data-line-number="2">          <span class="fu">|</span> <span class="dt">Node</span> <span class="dt">Tree</span> <span class="dt">Int</span> <span class="dt">Tree</span></a>
+<a class="sourceLine" id="cb21-3" data-line-number="3">  <span class="kw">deriving</span> <span class="dt">Show</span></a></code></pre></div>
+<p>(Jangan bertanya untuk apa pohon tersebut, ini hanyalah contoh. Ok?)</p>
+<p>Contohnya:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="ot">tree ::</span> <span class="dt">Tree</span></a>
+<a class="sourceLine" id="cb22-2" data-line-number="2">tree <span class="fu">=</span> <span class="dt">Node</span> (<span class="dt">Leaf</span> <span class="ch">'x'</span>) <span class="dv">1</span> (<span class="dt">Node</span> (<span class="dt">Leaf</span> <span class="ch">'y'</span>) <span class="dv">2</span> (<span class="dt">Leaf</span> <span class="ch">'z'</span>))</a></code></pre></div></div>
+
+    </div>
+    <div id="footer">
+      Haskell Indonesia &copy; 2014-2018
+    </div>
+  </body>
+</html>
